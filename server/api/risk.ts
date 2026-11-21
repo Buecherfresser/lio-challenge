@@ -98,6 +98,7 @@ riskApi.get("/questions", (c) => {
 
 riskApi.get("/settings", (c) => c.json(currentSettings()));
 riskApi.post("/settings", async (c) => {
+  if (config.settingsLocked) return c.json({ error: "Settings are locked on this server (SETTINGS_LOCKED)." }, 403);
   const saved = saveSettings(((await c.req.json().catch(() => ({}))) ?? {}) as Record<string, never>);
   loadSnapshot(true);
   return c.json(saved);

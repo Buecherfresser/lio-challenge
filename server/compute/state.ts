@@ -1,7 +1,7 @@
 import { VOCAB } from "../vocab.ts";
 import type { Fact } from "../../shared/api.ts";
 import { config } from "../config.ts";
-import { all, get, kv } from "../db.ts";
+import { all, get, kv, pastView } from "../db.ts";
 import { now } from "../clock.ts";
 import { currentFacts } from "../facts.ts";
 import { settings } from "./settings.ts";
@@ -102,10 +102,22 @@ export function planChanged() { kv.set(PLAN_REV, String(Number(kv.get(PLAN_REV) 
 let cached: Snapshot | null = null;
 
 export function loadSnapshot(fresh = false): Snapshot {
+  // A recorded moment never changes, so its state is loaded once and kept with the view.
+  const past = pastView.getStore();
+  if (past) {
+    if (!past.cache.has("snapshot")) past.cache.set("snapshot", build());
+    return past.cache.get("snapshot") as Snapshot;
+  }
   const t = Date.now();
   if (!fresh && cached && t - cached.loadedAt < settings.cacheSeconds * 1000 && cached.signature === dataSignature()) return cached;
+  cached = build();
+  return cached;
+}
+
+function build(): Snapshot {
+  const t = Date.now();
   const signature = dataSignature();
-  cached = {
+  return {
     loadedAt: t,
     signature,
     now: now().getTime(),
@@ -124,7 +136,6 @@ export function loadSnapshot(fresh = false): Snapshot {
     planned: all<{ decision_id: number; scenario: string }>("SELECT id AS decision_id, scenario FROM decisions WHERE status = 'approved' AND stage IN ('approved', 'ordered') ORDER BY id"),
     memo: new Map(),
   };
-  return cached;
 }
 
 /** Compute something once per snapshot. */

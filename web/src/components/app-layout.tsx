@@ -5,6 +5,8 @@ import { ProductMark } from "@/components/product-mark"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TimeBar, TimeToggle } from "@/components/time-bar"
+import { usePast } from "@/lib/time-travel"
 import { ViewSwitch } from "@/components/view-switch"
 import { duration, timeOnly, weekdayTime } from "@/lib/format"
 import { navItemFor } from "@/lib/nav"
@@ -50,6 +52,7 @@ export function Countdown() {
 
 export function AppLayout() {
   const { pathname } = useLocation()
+  const past = usePast()
   return (
     // The sidebar starts as a rail of icons and opens over the page on hover. The button in the header pins it open.
     <SidebarProvider defaultOpen={false}>
@@ -59,12 +62,14 @@ export function AppLayout() {
           <SidebarTrigger className="-ml-1.5" />
           <Separator orientation="vertical" className="mr-1 data-vertical:h-4 data-vertical:self-center" />
           <h1 className="text-sm font-medium">{pageTitle(pathname)}</h1>
-          {/* Room on the right for the time controls: the countdown, the sync and, later, the timeline. */}
+          {/* The time controls: where in time the dashboard is, the countdown and the sync. */}
           <div className="ml-auto flex min-w-0 items-center gap-3 pl-4">
             <Countdown />
-            <SyncControls />
+            <TimeToggle />
+            {!past && <SyncControls />}
           </div>
         </header>
+        <TimeBar />
         <div className="min-h-0 flex-1 overflow-auto">
           <Outlet />
         </div>
@@ -82,10 +87,14 @@ export function ManagementLayout() {
       <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-3 border-b bg-background/90 px-2 backdrop-blur md:px-4">
         <ProductMark />
         <ViewSwitch />
-        <div className="ml-auto hidden min-w-0 pl-4 sm:block">
-          <Countdown />
+        <div className="ml-auto flex min-w-0 items-center gap-3 pl-4">
+          <div className="hidden min-w-0 sm:block">
+            <Countdown />
+          </div>
+          <TimeToggle />
         </div>
       </header>
+      <TimeBar />
       <main className="min-h-0 flex-1">
         <Outlet />
       </main>

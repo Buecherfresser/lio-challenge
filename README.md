@@ -64,6 +64,19 @@ There are two views. A switch at the top changes between them.
 
 The map shows only critical supply, which means shipments that carry a part with the status uncertain or lost. Parts that are on track appear in the list next to the map. Ships, planes and trucks sit where they probably are now. That position comes from the last tracked position, or from departure and arrival time along a real shipping lane or flight path. A click on a vehicle shows its arrival, quantity and goods value. When a risk assumes a shipment does not make it, its route is crossed out, and the replacement route from a decision card is drawn in blue: dashed while the decision is pending, solid once it is approved.
 
+## Looking back
+
+The button "Live" in the header opens the time bar. It shows the dashboard as it was at an earlier moment, on every page, so you can go through an event again step by step.
+
+- **One event at a time.** An event is a delivery of new or changed files from the portal and everything it set off. You pick the event on the left of the bar. A step that happens hours later, such as a supplier's reply, still belongs to the event that first brought up its risk.
+- **Points with a word.** Each point is a step you can jump to: New data, Risk, Supplier asked, Supplier replied, Decision ready, Approved (or Ordered, Rejected), Confirmed (or Failed). The words are a fixed list in `server/history.ts`. Code sets them from what was logged, no model writes them. Small ticks are steps in between. A dashed line means that somebody was waited for.
+- **Play** goes through the steps one after the other and skips the waits. The times shown are the real ones. The arrow keys move one step.
+- **Nothing can be changed in the past.** Every action button is off until you click "Back to live".
+- On the History page, the small clock on a row opens the dashboard as it was right after that step.
+- A link can open the dashboard at a moment: add `?moment=<id>` to any page.
+
+How it works: after each step that changes what the dashboard shows, the server writes the state down in `data/history.db`. Facts and the log only ever grow, so for them it notes the last id. A request with `?at=<id>` then reads that state, and the code that computes the numbers is the same as for the live state. The bar starts once the first full reading of the data is through, because the first reading is one large step and not an event. The history belongs to its `app.db`: if that file is replaced, the recorded moments are dropped.
+
 ## Safe, uncertain, lost
 
 - **Safe**: the parts are in the building and usable.
@@ -108,6 +121,7 @@ node server/cli.ts import-folder ../soony-data
 | `server/sync` | Sync, snapshots, replay |
 | `server/ingest` | Loaders for the base tables |
 | `server/agents` | Data agent, risk agent, action agent (`action.ts`), its questions (`questions.ts`) and the read tools the agents share (`tools.ts`) |
+| `server/history.ts` | Recording of moments and reading the dashboard at an earlier one |
 | `server/compute` | The tools that count: parts, copies per edition, what-if, supplier reliability, approvals, the value of copies and what waiting costs (`value.ts`) |
 | `server/mail` | Sending, outbox, mailbox polling |
 | `prompts` | The agents' task prompts, free of anything customer specific, and `customer.md` with what the agents know about the customer |

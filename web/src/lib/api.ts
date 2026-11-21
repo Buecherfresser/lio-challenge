@@ -2,6 +2,7 @@ import type {
   DecisionCard,
   EventRow,
   Fact,
+  HistoryList,
   MailFolder,
   MapView,
   Message,
@@ -15,6 +16,8 @@ import type {
   Thread,
 } from "@shared/api.ts"
 
+import { timeTravel } from "@/lib/time-travel"
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -23,8 +26,22 @@ export class ApiError extends Error {
   }
 }
 
+/** The message for anything that would change data while a past moment is on screen. */
+export const PAST_MESSAGE = "You are looking at the past. Go back to live to change something."
+
+/**
+ * While a past moment is on screen, every read asks for the state of that moment (?at=) and nothing is sent that
+ * would change data. The list of moments itself is always the live one.
+ */
+function atMoment(path: string, init?: RequestInit): string {
+  const { at } = timeTravel.get()
+  if (at === null || path.startsWith("/api/history")) return path
+  if (init?.method && init.method !== "GET") throw new ApiError(409, PAST_MESSAGE)
+  return `${path}${path.includes("?") ? "&" : "?"}at=${at}`
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, init)
+  const res = await fetch(atMoment(path, init), init)
   if (!res.ok) {
     const text = await res.text().catch(() => "")
     let message = text
@@ -74,6 +91,7 @@ export const api = {
   part: (partId: string) => get<PartDetail>(`/api/parts/${encodeURIComponent(partId)}`),
   decisions: () => get<DecisionCard[]>("/api/decisions?status=all"),
   approveDecision: (id: number, by?: string) => post<DecisionCard>(`/api/decisions/${id}/approve`, by ? { by } : {}),
+  history: () => get<HistoryList>("/api/history"),
   settings: () => get<Settings>("/api/settings"),
   saveSettings: (patch: Partial<Settings>) => post<Settings>("/api/settings", patch),
   rejectDecision: (id: number, reason: string) =>

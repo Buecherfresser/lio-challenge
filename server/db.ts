@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { config } from "./config.ts";
@@ -264,18 +265,32 @@ addColumn("issues", "note", "TEXT"); // "dismissed: <why>" when someone decided 
 type Param = string | number | bigint | null | Uint8Array;
 const clean = (params: unknown[]): Param[] => params.map((p) => (p === undefined ? null : typeof p === "boolean" ? (p ? 1 : 0) : (p as Param)));
 
+/**
+ * A request can look at the past: the state as it was at one recorded moment (see history.ts).
+ * While code runs inside pastView.run(view, ...), every read goes to that moment's database and every write is refused.
+ * Outside of it, which is every agent and every ordinary request, nothing changes: reads and writes use the live database.
+ */
+export interface PastView { id: number; at: string; db: DatabaseSync; cache: Map<string, unknown> }
+export const pastView = new AsyncLocalStorage<PastView>();
+const reading = (): DatabaseSync => pastView.getStore()?.db ?? db;
+const writing = (): DatabaseSync => {
+  if (pastView.getStore()) throw new Error("You are looking at the past. Go back to live to change something.");
+  return db;
+};
+
 /** Small typed helpers around node:sqlite. */
 export function all<T = Record<string, unknown>>(sql: string, ...params: unknown[]): T[] {
-  return db.prepare(sql).all(...clean(params)) as T[];
+  return reading().prepare(sql).all(...clean(params)) as T[];
 }
 export function get<T = Record<string, unknown>>(sql: string, ...params: unknown[]): T | undefined {
-  return db.prepare(sql).get(...clean(params)) as T | undefined;
+  return reading().prepare(sql).get(...clean(params)) as T | undefined;
 }
 export function run(sql: string, ...params: unknown[]): { changes: number; lastId: number } {
-  const r = db.prepare(sql).run(...clean(params));
+  const r = writing().prepare(sql).run(...clean(params));
   return { changes: Number(r.changes), lastId: Number(r.lastInsertRowid) };
 }
 export function tx<T>(fn: () => T): T {
+  writing();
   db.exec("BEGIN");
   try { const r = fn(); db.exec("COMMIT"); return r; } catch (e) { db.exec("ROLLBACK"); throw e; }
 }
