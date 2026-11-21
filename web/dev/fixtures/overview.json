@@ -1,0 +1,148 @@
+{
+  "now": "2026-11-21T19:00:00Z",
+  "deadline": "2026-11-22T19:00:00Z",
+  "hours_left": 24,
+  "packing_hours_left": 18,
+  "editions": [
+    {
+      "product_id": "GH6-STD",
+      "name": "Grand Heist 6 Standard",
+      "demand": 24000,
+      "packed": 9500,
+      "remaining": 14500,
+      "safe": 7000,
+      "uncertain": 7500,
+      "lost": 0,
+      "bottleneck_part_id": "P-1001",
+      "bottleneck_reason": "Game cards on flights due Sunday morning"
+    },
+    {
+      "product_id": "GH6-COL",
+      "name": "Grand Heist 6 Collector's",
+      "demand": 6000,
+      "packed": 3500,
+      "remaining": 2500,
+      "safe": 1300,
+      "uncertain": 0,
+      "lost": 1200,
+      "bottleneck_part_id": "P-2001",
+      "bottleneck_reason": "Statues from Pune arrive on 1 Dec"
+    }
+  ],
+  "open_decisions": [
+    {
+      "copies_by_product": [
+        {
+          "product_id": "GH6-STD",
+          "copies": 1500
+        }
+      ],
+      "approver": {
+        "role": "Head of Procurement",
+        "person": "Mara Lindqvist",
+        "rule": "PP-07: up to €25,000",
+        "available": true,
+        "note": null
+      },
+      "mail_draft": null,
+      "created_by": "mock",
+      "created_at": "2026-11-21T14:20:00Z",
+      "decided_at": null,
+      "decided_by": null,
+      "id": 41,
+      "risk_id": 8,
+      "status": "pending",
+      "title": "Fly 1,500 cards from Hwaseong",
+      "option": "Hwaseong Memory ships 1,500 cards from stock by air via Incheon.",
+      "rationale": "Covers the rest of the stuck lot.",
+      "copies_saved": 1500,
+      "cost_eur": 14200,
+      "cost_basis": "Air freight quote €8.50/unit plus handling",
+      "risk": {
+        "id": 8,
+        "status": "open",
+        "part_id": "P-1001",
+        "product_id": null,
+        "supplier_id": "SUP-0010",
+        "title": "Port strike in Yantian holds 4,000 game cards",
+        "explanation": "The container with 4,000 game cards cannot leave Yantian before 25 Nov.",
+        "probability": 0.8,
+        "copies_at_risk": 4000,
+        "copies_by_product": [
+          {
+            "product_id": "GH6-STD",
+            "copies": 4000
+          }
+        ],
+        "scenario": {},
+        "fact_ids": [],
+        "tool_calls": [],
+        "created_at": "2026-11-21T14:10:00Z"
+      }
+    }
+  ],
+  "top_risks": [
+    {
+      "id": 8,
+      "status": "open",
+      "part_id": "P-1001",
+      "product_id": null,
+      "supplier_id": "SUP-0010",
+      "title": "Port strike in Yantian holds 4,000 game cards",
+      "explanation": "The container with 4,000 game cards cannot leave Yantian before 25 Nov.",
+      "probability": 0.8,
+      "copies_at_risk": 4000,
+      "copies_by_product": [
+        {
+          "product_id": "GH6-STD",
+          "copies": 4000
+        }
+      ],
+      "scenario": {},
+      "fact_ids": [],
+      "tool_calls": [],
+      "created_at": "2026-11-21T14:10:00Z"
+    },
+    {
+      "id": 9,
+      "status": "open",
+      "part_id": "P-2001",
+      "product_id": null,
+      "supplier_id": "SUP-0042",
+      "title": "Statues from Pune arrive on 1 Dec",
+      "explanation": "The vessel is due in Hamburg on 1 Dec, after the launch.",
+      "probability": 0.8,
+      "copies_at_risk": 1200,
+      "copies_by_product": [
+        {
+          "product_id": "GH6-STD",
+          "copies": 1200
+        }
+      ],
+      "scenario": {},
+      "fact_ids": [],
+      "tool_calls": [],
+      "created_at": "2026-11-21T14:10:00Z"
+    }
+  ],
+  "counts": {
+    "open_issues": 4,
+    "open_tasks": 2,
+    "needs_approval_mails": 1,
+    "pending_decisions": 1,
+    "parts_at_risk": 2
+  },
+  "last_sync": {
+    "at": "2026-11-21T18:57:00Z",
+    "snapshot_id": 42,
+    "added": 1,
+    "changed": 3,
+    "removed": 0,
+    "source": "live"
+  },
+  "mode": {
+    "source": "live",
+    "mail": "outbox",
+    "llm": true
+  }
+}

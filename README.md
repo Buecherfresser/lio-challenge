@@ -39,11 +39,19 @@ The rule behind steps 4 and 5: the model thinks, the code computes. Quantities, 
 
 ## The dashboard
 
-- **Overview**: per edition one number, split into safe, uncertain and lost, plus the decisions waiting for you.
+There are two views. A switch at the top changes between them.
+
+**Management** (`/`, for the head of procurement) shows one number, how many copies are ready by the deadline, split into safe, uncertain and lost. Below it is the map, and one line appears when a decision waits for approval. There is no sidebar, no agent status and no lists.
+
+**Buyer** (`/buyer` and every page below) is the workspace:
+
+- **Overview**: the copies per edition, what needs you (decisions, mails, tasks as counts), and the map.
 - **Parts**: every part with its status. A click opens the sources, contradictions, open questions and history.
 - **Approvals**: decision cards with Approve and Reject.
 - **Inbox**: mails and tasks from agents and people, per supplier or person. Supplier mails show the original next to the English version.
 - **Log**: every step of every agent in one sentence, with the model, tokens and cost.
+
+The map shows only critical supply, which means shipments that carry a part with the status uncertain or lost. Parts that are on track appear in the list next to the map. Ships, planes and trucks sit where they probably are now. That position comes from the last tracked position, or from departure and arrival time along a real shipping lane or flight path. A click on a vehicle shows its arrival, quantity and goods value. When a risk assumes a shipment does not make it, its route is crossed out, and the replacement route from a decision card is drawn in blue: dashed while the decision is pending, solid once it is approved.
 
 ## Safe, uncertain, lost
 

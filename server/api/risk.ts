@@ -10,11 +10,12 @@ import { editions, partDetail, partRows } from "../compute/parts.ts";
 import { decisions, riskRows, toRisk } from "../compute/rows.ts";
 import { simulate } from "../compute/simulate.ts";
 import { allReliability } from "../compute/reliability.ts";
+import { mapView } from "../compute/map.ts";
 import { approvalFor, APPROVAL_KINDS } from "../compute/approval.ts";
 import type { ApprovalKind } from "../compute/approval.ts";
 import { decide } from "../agents/action.ts";
 
-// Routes for the launch view: copies per edition, parts, risks and decision cards.
+// Routes for the launch view: copies per edition, the supply map, parts, risks and decision cards.
 // The heavy tables are computed once per loaded state and reused for a few seconds (the dashboard polls every 5 s).
 
 export const riskApi = new Hono();
@@ -48,6 +49,8 @@ function overview(): Overview {
 }
 
 riskApi.get("/overview", (c) => c.json(overview()));
+
+riskApi.get("/map", (c) => c.json(mapView()));
 
 riskApi.get("/parts", (c) => c.json(partRows()));
 

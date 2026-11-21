@@ -16,7 +16,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PRODUCT_NAME } from "@/lib/config"
+import { ProductMark } from "@/components/product-mark"
+import { ViewSwitch } from "@/components/view-switch"
 import { num, usd } from "@/lib/format"
 import { NAV_ITEMS } from "@/lib/nav"
 import { useOverview, useReplayNext, useRunAll, useStatus } from "@/lib/queries"
@@ -122,26 +123,20 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex h-8 items-center gap-2 px-2">
-          <span className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
-            <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden>
-              <path d="M3 4.5h10M3 8h10M3 11.5h6" />
-            </svg>
-          </span>
-          <span className="text-sm font-semibold tracking-tight">{PRODUCT_NAME}</span>
-        </div>
+        <ProductMark />
+        <ViewSwitch className="mx-2 mt-1 flex" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               {NAV_ITEMS.map((item) => {
-                const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to)
+                const active = pathname.startsWith(item.to)
                 const badge = badges[item.to]
                 return (
                   <SidebarMenuItem key={item.to}>
                     <SidebarMenuButton asChild isActive={active}>
-                      <NavLink to={item.to} end={item.to === "/"} onClick={() => setOpenMobile(false)}>
+                      <NavLink to={item.to} onClick={() => setOpenMobile(false)}>
                         <item.icon />
                         <span>{item.label}</span>
                       </NavLink>

@@ -1,17 +1,23 @@
 import { Link, Route, Routes } from "react-router"
-import { AppLayout } from "@/components/app-layout"
+import { AppLayout, ManagementLayout } from "@/components/app-layout"
 import { EmptyState } from "@/components/states"
+import { BUYER_HOME } from "@/lib/nav"
 import { ApprovalsPage } from "@/pages/approvals"
+import { BuyerPage } from "@/pages/buyer"
 import { InboxPage } from "@/pages/inbox"
 import { LogPage } from "@/pages/log"
-import { OverviewPage } from "@/pages/overview"
+import { ManagementPage } from "@/pages/management"
 import { PartsPage } from "@/pages/parts"
 
 export default function App() {
   return (
     <Routes>
+      {/* Two views: management (one number and the map) and the buyer's workspace. */}
+      <Route element={<ManagementLayout />}>
+        <Route index element={<ManagementPage />} />
+      </Route>
       <Route element={<AppLayout />}>
-        <Route index element={<OverviewPage />} />
+        <Route path={BUYER_HOME.slice(1)} element={<BuyerPage />} />
         <Route path="parts" element={<PartsPage />} />
         <Route path="parts/:part_id" element={<PartsPage />} />
         <Route path="approvals" element={<ApprovalsPage />} />
@@ -24,7 +30,7 @@ export default function App() {
               <EmptyState>
                 <span>
                   This page does not exist.{" "}
-                  <Link to="/" className="font-medium text-foreground underline underline-offset-4">
+                  <Link to={BUYER_HOME} className="font-medium text-foreground underline underline-offset-4">
                     Go to the overview
                   </Link>
                 </span>
