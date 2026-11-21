@@ -11,7 +11,7 @@ import { pendingCount } from "./agents/data/reader.ts";
 import { proposeColumnMapping } from "./agents/data/extract.ts";
 import { pollInbox } from "./mail/inbox.ts";
 import { runRiskAgent } from "./agents/risk.ts";
-import { runActionAgent } from "./agents/action.ts";
+import { recomputeDecisions, runActionAgent } from "./agents/action.ts";
 import type { Overview, Status } from "../shared/api.ts";
 
 // One cycle: sync -> base data -> data agent -> risk agent -> action agent.
@@ -69,7 +69,7 @@ const pendingDocs = () => pendingCount();
 
 export async function runData() { return step("data_agent", async () => { await pollInbox(); return runDataAgent({ limit: DOCS_PER_CYCLE }); }); }
 export async function runRisk(force = false) { return step("risk_agent", () => runRiskAgent({ force })); }
-export async function runAction() { return step("action_agent", () => runActionAgent()); }
+export async function runAction() { return step("action_agent", async () => { recomputeDecisions(); return runActionAgent(); }); }
 
 let cycling = false;
 let again = false;

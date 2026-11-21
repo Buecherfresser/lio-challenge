@@ -555,3 +555,25 @@ export function agentWork(): AgentWork[] {
   }
   return out;
 }
+
+/**
+ * Pending decision cards follow the data: copies saved are computed again from the card's what-if and its risk,
+ * so a card never shows a number from an older state. Code only.
+ */
+export function recomputeDecisions(runId?: string): number {
+  const snap = loadSnapshot();
+  let changed = 0;
+  for (const d of all<{ id: number; risk_id: number; title: string; copies_saved: number; scenario: string }>("SELECT id, risk_id, title, copies_saved, scenario FROM decisions WHERE status = 'pending'")) {
+    const risk = get<{ scenario: string }>("SELECT scenario FROM risks WHERE id = ?", d.risk_id);
+    if (!risk) continue;
+    let sim;
+    try { sim = simulateAction(JSON.parse(risk.scenario), JSON.parse(d.scenario || "{}"), snap); } catch { continue; }
+    if (!sim.valid || sim.copies_saved === d.copies_saved) continue;
+    run("UPDATE decisions SET copies_saved = ?, copies_by_product = ? WHERE id = ?", sim.copies_saved, JSON.stringify(sim.copies_saved_by_product), d.id);
+    changed++;
+    logEvent({ actor: "action_agent", action: "decision.recomputed", run_id: runId, object: { type: "decision", id: String(d.id), label: d.title },
+      summary: `I recomputed the option "${d.title}" with the latest data: ${fmtQty(d.copies_saved)} copies saved became ${fmtQty(sim.copies_saved)}.`,
+      output: { decision_id: d.id, before: d.copies_saved, after: sim.copies_saved, by_product: sim.copies_saved_by_product } });
+  }
+  return changed;
+}
