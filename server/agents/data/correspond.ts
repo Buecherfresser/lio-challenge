@@ -128,7 +128,7 @@ export async function correspond(opts: { runId: string }): Promise<CorrespondRes
     rules.length ? `Approval rules:\n${rules.map((r) => `- ${r.policy}: ${r.text || `${r.kind}, ${r.role}${r.limit_eur !== null ? `, up to EUR ${r.limit_eur}` : ""}`}`).join("\n")}` : "No approval rules have been read yet.",
     pendingAsk.length ? `Already asked and not answered yet (issue id | to | question):\n${pendingAsk.map((i) => `${i.id} | ${i.addressee === "supplier" ? i.supplier_id : i.assignee_role} | ${i.question ?? i.title}`).join("\n")}` : "",
     `Open issues:\n${JSON.stringify(open.map((i) => ({
-      issue_id: i.id, type: i.type, raised_by: i.created_by === "code" ? "rule" : "reading agent", title: i.title, detail: i.detail,
+      issue_id: i.id, type: i.type, raised_by: i.created_by === "code" ? "rule" : i.created_by === "action_agent" ? "action agent" : "reading agent", title: i.title, detail: i.detail,
       ...(i.expected ? { expected: i.expected } : {}), ...(i.actual ? { actual: i.actual } : {}), about: `${i.object_type} ${i.object_id}`,
       ...(i.part_id ? { part_id: i.part_id } : {}), ...(i.supplier_id ? { supplier_id: i.supplier_id } : {}),
       ...(i.addressee ? { suggested_to: i.addressee === "supplier" ? "supplier" : "customer" } : {}), ...(i.question ? { question: i.question } : {}), fact_ids: json<number[]>(i.fact_ids, []),

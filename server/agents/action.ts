@@ -4,7 +4,7 @@ import { all, get, json, kv, run, tx } from "../db.ts";
 import { now, nowIso } from "../clock.ts";
 import { logEvent, newRunId } from "../events.ts";
 import { factsById } from "../facts.ts";
-import { addUsage, arr, enumT, llmAvailable, nullable, obj, prompt, runAgent, str, withStyle } from "../llm.ts";
+import { arr, enumT, llmAvailable, nullable, obj, prompt, runAgent, str, withStyle } from "../llm.ts";
 import type { Tool, Usage } from "../llm.ts";
 import { fmtQty, fmtTime, settings } from "../compute/settings.ts";
 import { loadSnapshot, planChanged } from "../compute/state.ts";
@@ -21,6 +21,7 @@ import type { RiskDb } from "../compute/rows.ts";
 import { logger, readTools } from "./tools.ts";
 import { TOPICS, askQuestion, contactCounts, flushQuestions, questionSignature, questionsForAgent, refreshQuestions, threadForAgent, waitingOn } from "./questions.ts";
 import type { AskInput } from "./questions.ts";
+import { assigneeFor, loadRoles } from "./data/people.ts";
 
 // The action agent. One agent works through one risk: it finds the way out, asks what is missing, lets the code check
 // whether it pays, and hands a decision with a short report to the right person. Then it follows through.
@@ -147,11 +148,14 @@ function addressee(mail: MailDraft, snap: Snapshot): { ok: true; thread_id: stri
   }
   const title = mail.role?.trim();
   if (!title) return { ok: false, reason: "the mail names no role" };
-  const known = [...new Set(snap.fx.ofField("role", "person").map((f) => f.object_id))].find((t) => t.toLowerCase() === title.toLowerCase());
-  const person = known ? snap.fx.val("role", known, "person") : null;
-  const name = person && !/^(vacant|tbd|open)?$/i.test(person.trim()) ? person.trim() : (known ?? title);
+  const roles = loadRoles();
+  const known = [...roles.keys()].find((t) => t.toLowerCase() === title.toLowerCase());
+  if (!known) return { ok: false, reason: `the mail names a role that is not on the organisation chart (${title}). Use one of: ${[...roles.keys()].join(", ") || "none on file"}` };
+  // If the seat is empty, the deputy or the next one up the line gets it.
+  const who = assigneeFor(known, roles);
+  const name = who.person ?? who.role;
   // The organisation chart holds no mail addresses. A mail to a colleague is delivered as a task in the dashboard.
-  return { ok: true, thread_id: `person:${name}`, to_addr: "", supplier_id: null, role: known ?? title, person: name, name };
+  return { ok: true, thread_id: `person:${name}`, to_addr: "", supplier_id: null, role: who.role, person: name, name };
 }
 
 const cleanLines = (lines: ReportLine[] | undefined, known: (ids: number[]) => number[]): ReportLine[] =>
@@ -239,7 +243,7 @@ async function carryOut(decisionId: number, by: string): Promise<{ sent: boolean
   const m = get<{ id: number; to_addr: string; person: string | null; subject: string; body_en: string; supplier_id: string | null; status: string }>("SELECT id, to_addr, person, subject, body_en, supplier_id, status FROM messages WHERE id = ?", mailId);
   if (!m || m.status === "sent" || m.status === "outbox") return { sent: true, how: "already out", error: null };
   if (!m.supplier_id) {
-    const role = get<{ object_id: string }>("SELECT object_id FROM facts WHERE object_type = 'role' AND field = 'person' AND value = ? ORDER BY id DESC LIMIT 1", m.person)?.object_id ?? m.person ?? "Procurement";
+    const role = [...loadRoles().values()].find((r) => r.person === m.person || r.deputy === m.person || r.role === m.person)?.role ?? m.person ?? "Procurement";
     tx(() => {
       run("INSERT INTO tasks (status, role, person, title, body, issue_id, object_type, object_id, created_by, created_at) VALUES ('open', ?, ?, ?, ?, NULL, 'decision', ?, 'action_agent', ?)", role, m.person, m.subject, m.body_en, String(decisionId), nowIso());
       run("UPDATE messages SET status = 'outbox', sent_at = ? WHERE id = ?", nowIso(), m.id);
@@ -431,7 +435,7 @@ function actionTools(risk: Risk, runId: string, did: { asked: number; proposed: 
             decide_by: timing.decide_by, copies_lost_per_hour_after_that: timing.wait_copies_per_hour, eur_lost_per_hour_after_that: timing.wait_eur_per_hour, timing: timing.basis,
             editions_with_the_option: sim.with.map((e) => ({ product_id: e.product_id, safe: e.safe, uncertain: e.uncertain, lost: e.lost, bottleneck: e.bottleneck_reason })) };
         }) },
-    { name: "ask", description: "Put a question to a supplier or a colleague. It is collected and leaves as one mail per supplier when you are done (a colleague gets a task). Refused if the same thing is already out or answered. Never use it to order, accept or book.",
+    { name: "ask", description: "Put a question to a supplier or a colleague. It is collected and leaves in one mail per supplier, together with the data agent's open questions, when you are done (a colleague gets a task). The mail states by when the answer is needed. Refused if you or the data agent already asked the same thing, or it is answered. Never use it to order, accept or book.",
       parameters: obj({
         to: enumT(["supplier", "role"]), supplier_id: nullable(str()), role: nullable(str("role title from the organisation chart")),
         topic: enumT([...TOPICS], "what kind of fact you ask for"),
@@ -439,8 +443,7 @@ function actionTools(risk: Risk, runId: string, did: { asked: number; proposed: 
         subject: str("a few words: what the question is about"),
         question: str("the question in English, answerable with a fact, with the order number, part description and the quantity or date in question"),
         background: nullable(str("what the writer of the mail should know and the recipient need not be told")),
-        answer_within_hours: nullable({ type: "number", description: "hours until you need the answer, null for the default" }),
-        reminder_of: nullable({ type: "integer", description: "id of the overdue or unanswered question this reminds of. One reminder per question." }),
+        reminder_of: nullable({ type: "integer", description: "id of the overdue question this reminds of. One reminder per question." }),
       }),
       run: async (a: Omit<AskInput, "risk_id">) => { const r = askQuestion({ ...a, risk_id: risk.id }, runId); if (r.accepted) did.asked++; return r; } },
     { name: "propose_decision", description: "Hand one option to the person who has to approve it. Code computes copies, value, cost, the time the decision can wait and the approver, stores the card with its mail, and returns them. Returns accepted false with the reason if something is missing.",
