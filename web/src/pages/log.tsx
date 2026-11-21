@@ -1,4 +1,4 @@
-import { ChevronRight, Cog, Loader2, FileSearch, RefreshCw, Search, Send, ShieldAlert, User, X } from "lucide-react"
+import { ChevronRight, Cog, History, Loader2, FileSearch, RefreshCw, Search, Send, ShieldAlert, User, X } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router"
@@ -16,7 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ACTOR_LABEL, OBJECT_TYPE_LABEL, dateOnly, num, timeWithSeconds, usd } from "@/lib/format"
-import { useEvents, useFacts, useStatus } from "@/lib/queries"
+import { useEvents, useFacts, useHistory, useStatus } from "@/lib/queries"
+import { timeTravel } from "@/lib/time-travel"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 const ACTOR_ICON: Record<Actor, LucideIcon> = {
@@ -85,7 +87,10 @@ function EventDetails({ event }: { event: EventRow }) {
   )
 }
 
-function EventItem({ event, repeat = 1 }: { event: EventRow; repeat?: number }) {
+/** The recorded moment that first includes a log entry: the dashboard as it was right after that step. */
+interface Moment { eventId: number; stepId: number; logId: number }
+
+function EventItem({ event, repeat = 1, moment }: { event: EventRow; repeat?: number; moment?: Moment }) {
   const [open, setOpen] = useState(false)
   const tokens = (event.tokens_in ?? 0) + (event.tokens_out ?? 0)
   const usage = [
@@ -121,6 +126,25 @@ function EventItem({ event, repeat = 1 }: { event: EventRow; repeat?: number }) 
         <div className="col-start-2 min-w-0 text-sm lg:col-start-auto">
           {event.summary}
           {repeat > 1 && <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">×{repeat}</span>}
+          {moment && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="See the dashboard as it was after this step"
+                  className="ml-1 align-middle text-muted-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    timeTravel.showEvent(moment.eventId, moment.stepId)
+                  }}
+                >
+                  <History />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>See the dashboard as it was after this step</TooltipContent>
+            </Tooltip>
+          )}
           {/* The object link repeats the title when the sentence already names it, so it is left out then. */}
           {event.object && !(event.object.label && event.summary.includes(event.object.label)) && (
             <>
@@ -235,6 +259,15 @@ export function LogPage() {
   const filtered = actors.length > 0 || Boolean(objectType || objectId || q)
 
   // Group by day so each row only needs the time. The same step twice in the same second shows once, with ×2.
+  // Every recorded moment, by the log entry it ends at. A row leads to the first moment that includes it.
+  const history = useHistory()
+  const moments: Moment[] = (history.data?.events ?? [])
+    .flatMap((e) => e.steps.map((step) => ({ eventId: e.id, stepId: step.id, logId: step.log_id })))
+    .sort((a, b) => a.logId - b.logId)
+  const momentFor = (logId: number): Moment | undefined =>
+    // Rows from before the first recorded moment have no dashboard of their own to show.
+    moments.length > 0 && logId >= moments[0].logId ? moments.find((m) => m.logId >= logId) : undefined
+
   const days: { day: string; events: { event: EventRow; repeat: number }[] }[] = []
   for (const event of rows) {
     const day = dateOnly(event.ts)
@@ -331,7 +364,7 @@ export function LogPage() {
               <Card className="py-0 shadow-none">
                 <ol className="divide-y">
                   {group.events.map(({ event, repeat }) => (
-                    <EventItem key={event.id} event={event} repeat={repeat} />
+                    <EventItem key={event.id} event={event} repeat={repeat} moment={momentFor(event.id)} />
                   ))}
                 </ol>
               </Card>

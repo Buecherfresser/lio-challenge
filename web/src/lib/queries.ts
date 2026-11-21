@@ -2,11 +2,14 @@ import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClie
 import type { ObjectType } from "@shared/api.ts"
 import { api, type EventFilter, type MessageFolder } from "@/lib/api"
 import { EVENTS_PAGE_SIZE } from "@/lib/config"
+import { usePast } from "@/lib/time-travel"
 
 // Every query polls. The interval is set once on the QueryClient in main.tsx.
 
 export const useOverview = () => useQuery({ queryKey: ["overview"], queryFn: api.overview })
 export const useStatus = () => useQuery({ queryKey: ["status"], queryFn: api.status })
+/** The events that can be looked at again, with their recorded moments. Always the live list. */
+export const useHistory = () => useQuery({ queryKey: ["history"], queryFn: api.history })
 export const useParts = () => useQuery({ queryKey: ["parts"], queryFn: api.parts })
 export const useMap = () => useQuery({ queryKey: ["map"], queryFn: api.map })
 export const usePart = (partId: string | undefined) =>
@@ -43,10 +46,14 @@ export const useEvents = (filter: EventFilter) =>
 /** Runs a POST and then reloads everything, because one action can change several lists. */
 function useAction<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
   const queryClient = useQueryClient()
-  return useMutation({
+  const past = usePast()
+  const mutation = useMutation({
     mutationFn: fn,
     onSettled: () => queryClient.invalidateQueries(),
   })
+  // Nothing can be changed while a past moment is on screen. Every action button is disabled while its action is
+  // pending, so reporting "pending" in the past switches them all off in one place.
+  return { ...mutation, isPending: mutation.isPending || past, past }
 }
 
 export const useApproveDecision = () => useAction(({ id, by }: { id: number; by?: string }) => api.approveDecision(id, by))

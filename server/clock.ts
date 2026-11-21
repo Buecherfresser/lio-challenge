@@ -1,11 +1,13 @@
 import { config } from "./config.ts";
-import { kv } from "./db.ts";
+import { kv, pastView } from "./db.ts";
 
 /**
  * The time the app believes it is.
  * Live: real time. Replay: the time of the snapshot that is loaded. NOW in .env overrides both.
  */
 export function now(): Date {
+  const past = pastView.getStore();
+  if (past) return new Date(past.at); // a request that looks at a recorded moment
   if (config.fixedNow) return new Date(config.fixedNow);
   if (config.source === "replay") {
     const w = kv.get("world_now");

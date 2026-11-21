@@ -6,6 +6,8 @@ import { HTTPException } from "hono/http-exception";
 import { config } from "./config.ts";
 import { factsById, factsOf } from "./facts.ts";
 import { listEvents } from "./events.ts";
+import { pastView } from "./db.ts";
+import { listHistory, openPast } from "./history.ts";
 import { runAction, runCycle, runData, runRisk, runSync, status } from "./pipeline.ts";
 import { dataApi } from "./api/data.ts";
 import { riskApi } from "./api/risk.ts";
@@ -25,6 +27,19 @@ app.get("/healthz", (c) => c.text("ok"));
 if (config.appPassword) app.use("*", basicAuth({ username: config.appUser, password: config.appPassword }));
 
 const api = new Hono();
+
+// What can be looked at again: the events since the first full reading, each with its recorded moments.
+api.get("/history", (c) => c.json(listHistory()));
+
+// ?at=<moment id> answers any read with the state of that moment. Nothing can be changed there.
+api.use("*", async (c, next) => {
+  const at = c.req.query("at");
+  if (!at) return next();
+  const view = openPast(Number(at));
+  if (!view) return c.json({ error: "That moment is not on record." }, 404);
+  if (c.req.method !== "GET") return c.json({ error: "You are looking at the past. Go back to live to change something." }, 409);
+  return pastView.run(view, () => next());
+});
 
 api.get("/status", (c) => c.json(status()));
 
