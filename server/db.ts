@@ -208,6 +208,17 @@ CREATE TABLE IF NOT EXISTS questions (
 CREATE INDEX IF NOT EXISTS questions_risk ON questions (risk_id, status);
 CREATE INDEX IF NOT EXISTS questions_recipient ON questions (recipient, status);
 
+-- What the reading agent writes down for itself and for people. Append-only.
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic TEXT NOT NULL,               -- general | supplier:<id> | part:<id>
+  text TEXT NOT NULL,
+  source TEXT,                       -- the document or mail it was written while reading
+  run_id TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notes_topic ON notes (topic);
+
 -- LLM-proposed column mappings for tabular files whose headers we did not know.
 CREATE TABLE IF NOT EXISTS column_mappings (
   signature TEXT PRIMARY KEY,        -- target table + sorted headers
@@ -245,6 +256,11 @@ for (const [column, decl] of [
   ["timing_basis", "TEXT"], ["expires_at", "TEXT"], ["report", "TEXT NOT NULL DEFAULT '{}'"], ["signatures", "TEXT NOT NULL DEFAULT '[]'"],
   ["stage", "TEXT NOT NULL DEFAULT 'proposed'"], ["auto", "INTEGER NOT NULL DEFAULT 0"], ["check_at", "TEXT"], ["closed_reason", "TEXT"],
 ] as const) addColumn("decisions", column, decl);
+
+// Columns added after the first release. Adding them to an existing database fails harmlessly once they exist.
+for (const sql of ["ALTER TABLE issues ADD COLUMN note TEXT"]) {
+  try { db.exec(sql); } catch { /* already there */ }
+}
 
 type Param = string | number | bigint | null | Uint8Array;
 const clean = (params: unknown[]): Param[] => params.map((p) => (p === undefined ? null : typeof p === "boolean" ? (p ? 1 : 0) : (p as Param)));

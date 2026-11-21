@@ -7,6 +7,7 @@ import { loadBase } from "./ingest/base.ts";
 import { replayNext, replayState, syncLive } from "./sync/sync.ts";
 import type { SyncResult } from "./sync/sync.ts";
 import { runDataAgent } from "./agents/data/index.ts";
+import { pendingCount } from "./agents/data/reader.ts";
 import { proposeColumnMapping } from "./agents/data/extract.ts";
 import { pollInbox } from "./mail/inbox.ts";
 import { runRiskAgent } from "./agents/risk.ts";
@@ -64,7 +65,7 @@ export async function runSync(advanceReplay = false): Promise<SyncResult | null>
   });
 }
 
-const pendingDocs = () => get<{ n: number }>("SELECT COUNT(*) AS n FROM documents WHERE current = 1 AND handler = 'openai' AND status = 'pending'")?.n ?? 0;
+const pendingDocs = () => pendingCount();
 
 export async function runData() { return step("data_agent", async () => { await pollInbox(); return runDataAgent({ limit: DOCS_PER_CYCLE }); }); }
 export async function runRisk(force = false) { return step("risk_agent", () => runRiskAgent({ force })); }

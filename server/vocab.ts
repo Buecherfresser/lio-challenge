@@ -198,7 +198,9 @@ export function parseNumber(s: string): number | null {
     // a single comma followed by exactly three digits is a thousands separator, otherwise a decimal comma
     t = /^[-+]?\d{1,3}(,\d{3})+$/.test(t) ? t.replace(/,/g, "") : t.replace(",", ".");
   } else if (lastDot >= 0) {
-    if (/^[-+]?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+    // Only two or more dot groups are thousands (1.234.567). A single dot is a decimal point (9.785, 0.500),
+    // because sources and the reading agent write numbers with a dot as decimal sign.
+    if (/^[-+]?\d{1,3}(\.\d{3}){2,}$/.test(t)) t = t.replace(/\./g, "");
   }
   const n = Number(t);
   return Number.isFinite(n) ? n : null;
