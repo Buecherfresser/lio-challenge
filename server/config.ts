@@ -45,6 +45,9 @@ const dataDir = path.resolve(APP_DIR, env("DATA_DIR", "./data"));
 
 export const config = {
   port: num("PORT", 8787),
+  // Login for the dashboard. Empty password = no login (local use).
+  appUser: env("APP_USER", "soony"),
+  appPassword: env("APP_PASSWORD"),
   dataDir,
   archiveDir: path.join(dataDir, "archive"),   // snapshots and file blobs, never deleted
   outboxDir: path.join(dataDir, "outbox"),
@@ -59,6 +62,8 @@ export const config = {
   syncIntervalSec: num("SYNC_INTERVAL_SEC", 180),
   replayIntervalSec: num("REPLAY_INTERVAL_SEC", 0),
 
+  // Who the product works for. The rest of what the agents know about the customer is in prompts/customer.md.
+  customer: { name: env("CUSTOMER_NAME", "the customer"), timezone: env("TIMEZONE", "Europe/Berlin") },
   deadline: new Date(env("DEADLINE", "2026-11-22T20:00:00+01:00")).toISOString(),
   shifts: parseShifts(env("SHIFTS", "2026-11-21T06:00:00+01:00/2026-11-21T22:00:00+01:00,2026-11-22T06:00:00+01:00/2026-11-22T20:00:00+01:00")),
   fixedNow: env("NOW") ? new Date(env("NOW")).toISOString() : null,
@@ -70,10 +75,13 @@ export const config = {
   openai: {
     apiKey: env("OPENAI_API_KEY"),
     modelExtract: env("OPENAI_MODEL_EXTRACT", "gpt-6-luna"),
-    modelVision: env("OPENAI_MODEL_VISION", "gpt-6.1-terra"),
     modelAgent: env("OPENAI_MODEL_AGENT", "gpt-6.2-sol"),
+    // The reading agent works with tools and reads scans, so it needs a model that does both well.
+    modelReader: env("OPENAI_MODEL_READER") || env("OPENAI_MODEL_AGENT", "gpt-6.2-sol"),
     prices: parsePrices(env("OPENAI_PRICES", "gpt-6-luna=0.10/0.50,gpt-6.1-terra=1/5,gpt-6.2-sol=2/10,gpt-6.2-astra=8/40")),
     concurrency: num("LLM_CONCURRENCY", 6),
+    // Model calls stop once the logged spend reaches this many US dollars. 0 = no limit.
+    budgetUsd: num("OPENAI_BUDGET_USD", 0),
   },
 
   mail: {

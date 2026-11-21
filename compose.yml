@@ -1,0 +1,19 @@
+name: lineguard
+
+services:
+  app:
+    build: .
+    image: lineguard:latest
+    restart: always
+    # Every setting from .env.example. On the server .env sits next to this file and is never touched by a deploy.
+    env_file: .env
+    environment:
+      PORT: 8080
+      DATA_DIR: /data
+    volumes:
+      # Working database, archive and outbox (owned by uid 1000)
+      - ./data:/data
+    ports:
+      # Loopback only. Public HTTPS for procurement.jonasdrechsel.com is the host Caddy in /opt/core.
+      - "127.0.0.1:8101:8080"
+    mem_limit: 1g
