@@ -199,8 +199,8 @@ export function storeProposal(risk: Risk, p: Proposal, createdBy: DecisionCard["
 
   const id = tx(() => {
     const decisionId = run(
-      `INSERT INTO decisions (risk_id, status, title, option, rationale, copies_saved, copies_by_product, cost_eur, cost_basis, approver, created_by, created_at) VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      risk.id, p.title.trim(), p.option.trim(), p.rationale?.trim() ?? "", sim.copies_saved, JSON.stringify(sim.copies_saved_by_product), cost.cost_eur, cost.cost_basis, JSON.stringify(approver), createdBy, nowIso()).lastId;
+      `INSERT INTO decisions (risk_id, status, title, option, rationale, copies_saved, copies_by_product, cost_eur, cost_basis, approver, scenario, created_by, created_at) VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      risk.id, p.title.trim(), p.option.trim(), p.rationale?.trim() ?? "", sim.copies_saved, JSON.stringify(sim.copies_saved_by_product), cost.cost_eur, cost.cost_basis, JSON.stringify(approver), JSON.stringify(scenario), createdBy, nowIso()).lastId;
     const messageId = run(
       `INSERT INTO messages (thread_id, direction, status, from_addr, to_addr, subject, language, body_original, body_en, supplier_id, person, created_by, issue_ids, decision_id, created_at)
        VALUES (?, 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?, 'action_agent', '[]', ?, ?)`,

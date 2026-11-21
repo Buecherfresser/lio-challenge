@@ -171,6 +171,7 @@ CREATE TABLE IF NOT EXISTS decisions (
   cost_eur REAL, cost_basis TEXT NOT NULL,
   approver TEXT NOT NULL,            -- JSON Approver
   mail_message_id INTEGER,
+  scenario TEXT NOT NULL DEFAULT '{}', -- the action as a what-if (normalized), for the supply map
   created_by TEXT NOT NULL,
   created_at TEXT NOT NULL, decided_at TEXT, decided_by TEXT, decision_reason TEXT
 );
@@ -199,6 +200,14 @@ CREATE TABLE IF NOT EXISTS carriers (carrier_id TEXT PRIMARY KEY, name TEXT, cit
 CREATE TABLE IF NOT EXISTS ports (locode TEXT PRIMARY KEY, name TEXT, country TEXT, lat REAL, lon REAL, mode TEXT);
 CREATE TABLE IF NOT EXISTS sites (site_id TEXT PRIMARY KEY, name TEXT, operator TEXT, type TEXT, country TEXT, city TEXT, lat REAL, lon REAL);
 `);
+
+// Columns added after a database was first created. CREATE TABLE IF NOT EXISTS leaves an existing table as it is,
+// so they are added here once, guarded by the table's current column list.
+const addColumn = (table: string, column: string, decl: string) => {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+};
+addColumn("decisions", "scenario", "TEXT NOT NULL DEFAULT '{}'");
 
 type Param = string | number | bigint | null | Uint8Array;
 const clean = (params: unknown[]): Param[] => params.map((p) => (p === undefined ? null : typeof p === "boolean" ? (p ? 1 : 0) : (p as Param)));

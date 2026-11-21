@@ -52,7 +52,7 @@ export interface SupplierPartRow { supplier_id: string; part_id: string; share: 
 export interface PoLineRow { po_line_id: string; po_number: string; po_line: number; supplier_id: string | null; part_id: string; quantity: number | null; unit_price: number | null; currency: string | null; order_date: string | null; requested_date: string | null; promised_date: string | null; actual_delivery_date: string | null; status: string | null }
 export interface ReceiptRow { gr_number: string; gr_date: string | null; po_number: string | null; po_line: number | null; supplier_id: string | null; part_id: string; qty_ordered: number | null; qty_received: number | null; delivery_note: string | null; remark: string | null }
 export interface StockRow { snapshot_date: string | null; material_id: string; batch: string | null; quantity: number | null }
-export interface ShipmentRow { shipment_id: string; mode: string | null; reference: string | null; supplier_id: string | null; po_numbers: string | null; part_ids: string | null; origin: string | null; destination: string | null; dest_site: string | null; etd: string | null; eta: string | null; status: string | null; note: string | null; updated_at: string | null }
+export interface ShipmentRow { shipment_id: string; mode: string | null; reference: string | null; supplier_id: string | null; po_numbers: string | null; part_ids: string | null; route_id: string | null; origin: string | null; destination: string | null; via: string | null; dest_site: string | null; etd: string | null; eta: string | null; status: string | null; note: string | null; updated_at: string | null; last_lat: number | null; last_lon: number | null }
 export interface RouteRow { route_id: string; origin: string | null; destination: string | null; mode: string | null; transit_days: number | null }
 
 export interface Snapshot {
@@ -101,7 +101,7 @@ export function loadSnapshot(fresh = false): Snapshot {
     poLines: all<PoLineRow>("SELECT po_line_id, po_number, po_line, supplier_id, part_id, quantity, unit_price, currency, order_date, requested_date, promised_date, actual_delivery_date, status FROM po_lines"),
     receipts: all<ReceiptRow>("SELECT gr_number, gr_date, po_number, po_line, supplier_id, part_id, qty_ordered, qty_received, delivery_note, remark FROM goods_receipts"),
     stock: all<StockRow>("SELECT snapshot_date, material_id, batch, quantity FROM stock ORDER BY id"),
-    shipments: all<ShipmentRow>("SELECT shipment_id, mode, reference, supplier_id, po_numbers, part_ids, origin, destination, dest_site, etd, eta, status, note, updated_at FROM shipments ORDER BY shipment_id"),
+    shipments: all<ShipmentRow>("SELECT shipment_id, mode, reference, supplier_id, po_numbers, part_ids, route_id, origin, destination, via, dest_site, etd, eta, status, note, updated_at, last_lat, last_lon FROM shipments ORDER BY shipment_id"),
     routes: all<RouteRow>("SELECT route_id, origin, destination, mode, transit_days FROM routes"),
     memo: new Map(),
   };
