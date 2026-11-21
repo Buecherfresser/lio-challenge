@@ -290,6 +290,11 @@ export function buildWorld(snap: Snapshot, scenario: Scenario, opts: BuildOption
       if (r.batch) lotRows.set(r.batch, { qty: r.quantity ?? 0, date: r.snapshot_date });
       else if ((r.quantity ?? 0) > 0) lotRows.set(`${partId}:unbatched`, { qty: r.quantity ?? 0, date: r.snapshot_date });
     }
+    // goods received after the stock count are in the building although the stock list does not show them yet
+    for (const r of snap.receipts) {
+      if (r.part_id !== partId || lotRows.has(r.gr_number) || !r.gr_date || !stockDate || r.gr_date <= stockDate) continue;
+      if ((r.qty_received ?? 0) > 0) lotRows.set(r.gr_number, { qty: r.qty_received ?? 0, date: r.gr_date });
+    }
     // lots that only a document knows about, if it is newer than the stock list
     for (const f of fx.ofField("lot", "stock_qty")) {
       if (f.part_id !== partId || lotRows.has(f.object_id)) continue;
@@ -399,6 +404,10 @@ export function buildWorld(snap: Snapshot, scenario: Scenario, opts: BuildOption
         // A newer document of the supplier about the only order line on this shipment wins over an older plan.
         const only = ls.length === 1 && ls[0].shipments.length === 1 ? ls[0] : null;
         if (only && only.shipped !== null && (only.shipped_at ?? "") > (qf.observed_at ?? "")) qty = Math.min(qty, only.shipped);
+        // What was booked in on these order lines since the shipment left has arrived and is counted as stock.
+        const etd = s.row.etd ?? "";
+        const arrived = ls.reduce((a, l) => a + (receiptsByLine.get(l.po_line_id) ?? []).filter((r) => r.part_id === partId && etd && (r.gr_date ?? "") >= etd).reduce((x, r) => x + (r.qty_received ?? 0), 0), 0);
+        qty = Math.max(0, qty - arrived);
         const total = ls.reduce((a, x) => a + x.open, 0);
         for (const l of ls) placed.set(l.po_line_id, (placed.get(l.po_line_id) ?? 0) + (total > 0 ? qty * (l.open / total) : 0));
       } else {
