@@ -77,9 +77,9 @@ export const config = {
   openai: {
     apiKey: env("OPENAI_API_KEY"),
     modelExtract: env("OPENAI_MODEL_EXTRACT", "gpt-6-luna"),
-    modelAgent: env("OPENAI_MODEL_AGENT", "gpt-6.2-sol"),
-    // The reading agent works with tools and reads scans, so it needs a model that does both well.
-    modelReader: env("OPENAI_MODEL_READER") || env("OPENAI_MODEL_AGENT", "gpt-6.2-sol"),
+    modelAgent: env("OPENAI_MODEL_AGENT", "gpt-6-luna"),
+    // The reading agent works with tools and reads scans. It uses the agent model unless set on its own.
+    modelReader: env("OPENAI_MODEL_READER") || env("OPENAI_MODEL_AGENT", "gpt-6-luna"),
     prices: parsePrices(env("OPENAI_PRICES", "gpt-6-luna=0.10/0.50,gpt-6.1-terra=1/5,gpt-6.2-sol=2/10,gpt-6.2-astra=8/40")),
     concurrency: num("LLM_CONCURRENCY", 6),
     // Model calls stop once the logged spend reaches this many US dollars. 0 = no limit.
