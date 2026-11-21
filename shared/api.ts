@@ -236,6 +236,36 @@ export interface AgentWork {
   last_at: string | null;
 }
 
+// ---- History: the dashboard at an earlier moment ----
+
+/** The words on the time bar. A fixed list, set by code from what was logged. */
+export type HistoryWord = "New data" | "Risk" | "Supplier asked" | "Supplier replied" | "Decision ready" | "Approved" | "Ordered" | "Rejected" | "Confirmed" | "Failed";
+
+/** One recorded moment. Pass its id as `at` to any GET request to read the state of then. */
+export interface HistoryStep {
+  id: number;
+  at: string;                 // ISO, wall clock
+  word: HistoryWord | null;   // null = a step in between, without a label
+  summary: string;            // the log sentence of the step
+  risk_id: number | null;
+  log_id: number;             // id of the last log entry at that moment
+}
+
+/** A delivery of new or changed files from the portal, and everything it set off. */
+export interface HistoryEvent {
+  id: number;
+  at: string;                 // ISO, when the files arrived
+  title: string;              // "3 new files · Karton Nowak"
+  state: string;              // where it stands, from its last step: "waiting for a supplier", "confirmed", ...
+  test: boolean;              // the files did not come from the live portal (imported or replayed)
+  steps: HistoryStep[];       // oldest first
+}
+
+export interface HistoryList {
+  recording_since: string | null; // ISO. null = the first full reading is not through yet, so there is nothing to go back to
+  events: HistoryEvent[];         // newest first
+}
+
 /** Settings a person may change while the app runs. */
 export interface Settings {
   autonomy_limit_eur: number;                 // below this cost the agent carries out a binding option itself. 0 = never
@@ -399,6 +429,8 @@ GET  /api/decisions?status=pending|all     -> DecisionCard[]   (includes risk an
 POST /api/decisions/:id/approve            -> DecisionCard     body: { by?: string }   (signs for the next open signature, or the one that names `by`)
 POST /api/decisions/:id/reject             -> DecisionCard     body: { by?: string, reason?: string }
 GET  /api/questions?risk_id=               -> AgentQuestion[]
+GET  /api/history                          -> HistoryList
+     Any GET request takes ?at=<HistoryStep.id> and then answers with the state of that moment. Other requests are refused with 409.
 GET  /api/settings                         -> Settings
 POST /api/settings                         -> Settings         body: Partial<Settings>
 GET  /api/threads                          -> Thread[]

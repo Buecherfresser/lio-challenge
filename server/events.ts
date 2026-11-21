@@ -1,5 +1,6 @@
 import type { Actor, EventRow, ObjectRef } from "../shared/api.ts";
 import { all, json, run } from "./db.ts";
+import { record } from "./history.ts";
 
 export interface LogInput {
   actor: Actor;
@@ -33,6 +34,7 @@ export function logEvent(e: LogInput): number {
   );
   const tag = `[${e.actor}] ${e.action}`;
   console.log(`${new Date().toISOString().slice(11, 19)} ${tag.padEnd(34)} ${e.summary}`);
+  record(r.lastId, e);
   return r.lastId;
 }
 
