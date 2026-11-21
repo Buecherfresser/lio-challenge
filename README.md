@@ -1,8 +1,8 @@
-# Lineguard
+# 1e16
 
-Lineguard tells Soony's procurement team about supply problems before the supplier does, and hands them decisions with a price instead of more tables. It watches Soony's supplier portal, reads every document into one table of facts, and works out how many copies of Grand Heist 6 will be packed in Hamburg by Sunday 22 Nov, 20:00.
+1e16 tells Soony's procurement team about supply problems before the supplier does, and hands them decisions with a price instead of more tables. It watches Soony's supplier portal, reads every document into one table of facts, and works out how many copies of Grand Heist 6 will be packed in Hamburg by Sunday 22 Nov, 20:00.
 
-"Lineguard" is a working title. You change it in `web/src/lib/config.ts`.
+The name comes from our team: 10^16 watts is roughly all the sunlight that reaches Earth, the energy of a civilization that uses its whole planet. The dashboard takes it from `web/src/lib/config.ts`.
 
 ## Run it
 
@@ -20,14 +20,14 @@ Then open http://localhost:8787.
 
 Two settings matter before the first start:
 
-- The portal token. Lineguard reads `BEARER` from `../lio-key.env`, or `LIO_TOKEN` from `app/.env`.
-- Your OpenAI key. Put `OPENAI_API_KEY=...` into `app/.env`. Without it Lineguard still syncs, loads the base data and checks the rules, but documents wait unread and the risk and action agents stay off.
+- The portal token. 1e16 reads `BEARER` from `../lio-key.env`, or `LIO_TOKEN` from `app/.env`.
+- Your OpenAI key. Put `OPENAI_API_KEY=...` into `app/.env`. Without it 1e16 still syncs, loads the base data and checks the rules, but documents wait unread and the risk and action agents stay off.
 
 `.env.example` lists every setting with its default.
 
 ## What happens in one cycle
 
-Every 3 minutes Lineguard runs these steps in order. "Sync now" in the dashboard starts a cycle at once.
+Every 3 minutes 1e16 runs these steps in order. "Sync now" in the dashboard starts a cycle at once.
 
 1. **Sync** (code only). It asks the portal for the file list and compares checksums with the last snapshot. New and replaced files become events. Every sync is stored as a complete version in `data/archive` and is never deleted.
 2. **Base data** (code only). Master data, purchase orders from both exports, goods receipts, stock, shipments and the pack-out log are loaded into tables.
@@ -73,13 +73,13 @@ An arrival date without a time counts as the end of that day, which is the caref
 
 ## Mail
 
-The suppliers in the challenge are played by AI agents that answer real e-mail. Their addresses are in the supplier profiles. The portal has no mail endpoint, so Lineguard sends and receives through an ordinary mailbox:
+The suppliers in the challenge are played by AI agents that answer real e-mail. Their addresses are in the supplier profiles. The portal has no mail endpoint, so 1e16 sends and receives through an ordinary mailbox:
 
 1. Take a mailbox with SMTP and IMAP access, for example a Gmail account with an app password.
 2. Register its address in the portal under Settings. Suppliers do not answer other senders.
 3. Set in `app/.env`: `MAIL_MODE=live`, `MAIL_FROM`, `MAIL_ALLOWED_SENDERS`, and the `SMTP_*` and `IMAP_*` settings.
 
-Lineguard checks the mailbox every two minutes and reads replies like any other source. While `MAIL_MODE=outbox`, which is the default, outgoing mail is written to `data/outbox` as files instead.
+1e16 checks the mailbox every two minutes and reads replies like any other source. While `MAIL_MODE=outbox`, which is the default, outgoing mail is written to `data/outbox` as files instead.
 
 Questions to suppliers go out without a click. Set `AUTO_SEND_CLARIFICATIONS=false` to hold them in the inbox under "Needs approval" until you click Send. Approving a decision card sends its mail (`SEND_ON_APPROVAL=false` holds it in the inbox instead).
 

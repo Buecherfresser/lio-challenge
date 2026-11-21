@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS decisions (
 );
 
 -- Questions the action agent asks a supplier or a colleague, per risk. A question to a supplier is stored as an issue too,
--- so the data agent's correspondence round puts it into its one mail per supplier. A colleague gets a task.
+-- so the data agent's clarification round puts it into its one mail per supplier. A colleague gets a task.
 CREATE TABLE IF NOT EXISTS questions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   risk_id INTEGER NOT NULL,

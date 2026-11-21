@@ -11,7 +11,7 @@ import type { IssueDb } from "./data/rows.ts";
 // Questions the action agent asks a supplier or a colleague, per risk.
 // A mail is not a tool call: it costs the other side attention. So three rules are enforced here, in code:
 //   1. Asking does not send. A question to a supplier is stored as an issue, next to the data agent's own questions.
-//      The data agent's correspondence round then writes one mail per supplier with all of them.
+//      The data agent's clarification round then writes one mail per supplier with all of them.
 //   2. The same thing is not asked twice, by either agent. A question that is out or answered is refused, with the answer.
 //   3. One reminder. After that the matter goes on inside the company, not in a third mail.
 // A question asks. It never orders, accepts or books: anything that binds the company is a decision card.

@@ -1,5 +1,5 @@
 // Screenshots of the supply map against the dev fixtures, without a backend.
-// Run from web/: node dev/screenshot.mjs [outDir]   (default: <tmp>/lineguard-screenshots)
+// Run from web/: node dev/screenshot.mjs [outDir]   (default: <tmp>/1e16-screenshots)
 // Starts the Vite dev server, opens dev/harness.html in Chromium (Playwright), answers /api/** from dev/fixtures.
 import { spawn } from "node:child_process"
 import { mkdirSync, readFileSync } from "node:fs"
@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url)
 const { chromium } = require("playwright")
 
 const web = path.resolve(import.meta.dirname, "..")
-const out = path.resolve(process.argv[2] ?? path.join(os.tmpdir(), "lineguard-screenshots"))
+const out = path.resolve(process.argv[2] ?? path.join(os.tmpdir(), "1e16-screenshots"))
 const port = 5199
 const base = `http://localhost:${port}`
 const fixture = (name) => JSON.parse(readFileSync(path.join(web, "dev/fixtures", name), "utf8"))
