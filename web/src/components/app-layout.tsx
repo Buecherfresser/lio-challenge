@@ -1,6 +1,6 @@
 import { Clock, RefreshCw } from "lucide-react"
 import { Outlet, useLocation } from "react-router"
-import { AppSidebar, SyncControls } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 import { ProductMark } from "@/components/product-mark"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -59,11 +59,7 @@ export function AppLayout() {
           <SidebarTrigger className="-ml-1.5" />
           <Separator orientation="vertical" className="mr-1 data-vertical:h-4 data-vertical:self-center" />
           <h1 className="text-sm font-medium">{pageTitle(pathname)}</h1>
-          {/* Room on the right for the time controls: the countdown, the sync and, later, the timeline. */}
-          <div className="ml-auto flex min-w-0 items-center gap-3 pl-4">
-            <Countdown />
-            <SyncControls />
-          </div>
+          {/* The header stays quiet. The last sync and "Sync now" live on the History page. Room on the right for the timeline. */}
         </header>
         <div className="min-h-0 flex-1 overflow-auto">
           <Outlet />

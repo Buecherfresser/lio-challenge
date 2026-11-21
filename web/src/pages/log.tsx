@@ -8,6 +8,7 @@ import { FactSources } from "@/components/fact-source"
 import { JsonBlock } from "@/components/json-block"
 import { ObjectLink } from "@/components/object-link"
 import { AutonomyDial } from "@/components/decision"
+import { SyncControls } from "@/components/app-sidebar"
 import { AGENTS } from "@/lib/agents"
 import { EmptyState, ErrorState } from "@/components/states"
 import { Button } from "@/components/ui/button"
@@ -15,7 +16,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ACTOR_LABEL, OBJECT_TYPE_LABEL, dateOnly, num, timeWithSeconds, usd } from "@/lib/format"
+import { ACTOR_LABEL, OBJECT_TYPE_LABEL, dateOnly, num, timeOnly, timeWithSeconds, usd } from "@/lib/format"
 import { useEvents, useFacts, useStatus } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
@@ -168,12 +169,16 @@ function AgentStatus({ status, loading }: { status: Status | undefined; loading:
           )
         })}
       </ul>
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-muted-foreground sm:ml-auto">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground sm:ml-auto">
         {figures.map((figure) => (
           <span key={figure.label}>
             <span className="font-medium text-foreground tabular-nums">{figure.value}</span> {figure.label}
           </span>
         ))}
+        <span>
+          {status.last_sync ? `Last sync ${timeOnly(status.last_sync.at)}` : "No sync yet"} · {status.mode.source}
+        </span>
+        <SyncControls />
       </div>
     </Card>
   )
