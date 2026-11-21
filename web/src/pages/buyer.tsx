@@ -2,6 +2,7 @@ import { ArrowRight, CircleCheck, Inbox, ListTodo, type LucideIcon } from "lucid
 import { Link } from "react-router"
 import type { EditionStatus, Overview } from "@shared/api.ts"
 import { Page } from "@/components/app-layout"
+import { AgentWorkCard } from "@/components/agent-work"
 import { PartLink } from "@/components/object-link"
 import { SectionTitle } from "@/components/stat"
 import { EmptyState, ErrorState } from "@/components/states"
@@ -170,6 +171,10 @@ export function BuyerPage() {
           </div>
         )}
         <NeedsYou overview={data} />
+      </section>
+
+      <section aria-label="Agents at work">
+        <AgentWorkCard work={data?.agent_work} loading={isPending} />
       </section>
 
       <section aria-label="Critical supply">

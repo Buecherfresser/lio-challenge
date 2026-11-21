@@ -13,7 +13,9 @@ import { allReliability } from "../compute/reliability.ts";
 import { mapView } from "../compute/map.ts";
 import { approvalFor, APPROVAL_KINDS } from "../compute/approval.ts";
 import type { ApprovalKind } from "../compute/approval.ts";
-import { decide } from "../agents/action.ts";
+import { agentWork, decide } from "../agents/action.ts";
+import { questionRows, toAgentQuestion } from "../agents/questions.ts";
+import { currentSettings, saveSettings, valueOf } from "../compute/value.ts";
 
 // Routes for the launch view: copies per edition, the supply map, parts, risks and decision cards.
 // The heavy tables are computed once per loaded state and reused for a few seconds (the dashboard polls every 5 s).
@@ -35,6 +37,8 @@ function overview(): Overview {
       editions: editions(snap),
       open_decisions: decisions("pending"),
       top_risks: riskRows("status = 'open'").slice(0, settings.topRisks).map((r) => toRisk(r, { facts: true, trace: false })),
+      agent_work: agentWork(),
+      value_at_risk_eur: valueOf(editions(snap).map((e) => ({ product_id: e.product_id, copies: e.lost }))),
       counts: {
         open_issues: count("SELECT COUNT(*) AS n FROM issues WHERE status != 'resolved'"),
         open_tasks: count("SELECT COUNT(*) AS n FROM tasks WHERE status = 'open'"),
@@ -85,6 +89,18 @@ riskApi.post("/decisions/:id/approve", async (c) => {
 riskApi.post("/decisions/:id/reject", async (c) => {
   const card = await decideRoute(c.req.param("id"), "rejected", await body(c));
   return card ? c.json(card) : c.json({ error: "decision not found" }, 404);
+});
+
+riskApi.get("/questions", (c) => {
+  const id = Number(c.req.query("risk_id"));
+  return c.json(questionRows(Number.isInteger(id) && id > 0 ? id : undefined).map(toAgentQuestion));
+});
+
+riskApi.get("/settings", (c) => c.json(currentSettings()));
+riskApi.post("/settings", async (c) => {
+  const saved = saveSettings(((await c.req.json().catch(() => ({}))) ?? {}) as Record<string, never>);
+  loadSnapshot(true);
+  return c.json(saved);
 });
 
 // Extras beyond the contract in shared/api.ts, for the dashboard and for testing the tools by hand.

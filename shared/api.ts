@@ -69,6 +69,8 @@ export interface Overview {
   editions: EditionStatus[];
   open_decisions: DecisionCard[];
   top_risks: Risk[];
+  agent_work?: AgentWork[];   // open risks the action agent has in hand
+  value_at_risk_eur?: number | null; // lost copies times what a copy is worth, null if no value is configured
   counts: { open_issues: number; open_tasks: number; needs_approval_mails: number; pending_decisions: number; parts_at_risk: number };
   last_sync: { at: string; snapshot_id: number; added: number; changed: number; removed: number; source: "live" | "replay" | "import" } | null;
   mode: { source: "live" | "replay"; mail: "outbox" | "live"; llm: boolean };
@@ -140,24 +142,97 @@ export interface Risk {
 
 export interface Approver { role: string; person: string | null; rule: string; available: boolean; note: string | null }
 
+/** One line of a decision report, with the facts it rests on. */
+export interface ReportLine { text: string; fact_ids: number[] }
+
+/** What the action agent hands over with a decision, in the order a reader needs it. */
+export interface DecisionReport {
+  research: ReportLine[];     // what the agent looked at
+  problem: string;            // what is wrong, two or three sentences
+  agreed: ReportLine[];       // what the other side has stated or confirmed in writing
+  next_steps: string[];       // what happens once the decision is approved
+  ruled_out: { option: string; reason: string }[];
+  contact: { with: string | null; sent: number; received: number }; // mails exchanged about this risk, counted by code
+}
+
+/** One signature a decision needs. `person` is who signs today, which is the stand-in when the role is vacant. */
+export interface Signature {
+  role: string;
+  person: string | null;
+  stands_in_for: string | null; // the role that would sign if it were filled
+  signed_by: string | null;
+  signed_at: string | null;
+}
+
+/** Where an approved decision stands: the mail is out (ordered), the other side delivered (done) or declined (failed). */
+export type DecisionStage = "proposed" | "approved" | "ordered" | "done" | "failed" | "withdrawn";
+
 export interface DecisionCard {
   id: number;
   risk_id: number;
   status: "pending" | "approved" | "rejected";
+  stage: DecisionStage;
   title: string;
   option: string;             // what we would do, one or two sentences
   rationale: string;
   copies_saved: number;       // from the what-if tool
   copies_by_product: { product_id: string; copies: number }[];
+  value_eur: number | null;   // copies saved times what a copy is worth, null if no value is configured
   cost_eur: number | null;
   cost_basis: string;         // how the cost was computed
+  net_eur: number | null;     // value minus cost, null if one of them is unknown
+  decide_by: string | null;   // ISO: later than this, the option saves fewer copies or the offer has run out
+  wait_copies_per_hour: number | null; // copies lost in the first hour after decide_by
+  wait_eur_per_hour: number | null;
+  timing_basis: string | null;// how decide_by was worked out, one sentence
+  recommended: boolean;       // the best pending option for its risk by value minus cost
+  approval_kind: string;
   approver: Approver;         // per PP-07
+  signatures: Signature[];    // one entry per person who has to sign
+  auto: boolean;              // the agent approved it itself, under the autonomy limit
+  report: DecisionReport | null;
+  report_facts?: Fact[];      // the facts the report lines cite
   mail_draft: Message | null;
   risk?: Risk;
   created_by: "mock" | "agent";
   created_at: string;
   decided_at: string | null;
   decided_by: string | null;
+  decision_reason: string | null;
+}
+
+/** A question the action agent asked a supplier or a colleague. */
+export interface AgentQuestion {
+  id: number;
+  risk_id: number;
+  to: string;                 // supplier or person name
+  supplier_id: string | null;
+  role: string | null;
+  text: string;
+  status: "queued" | "sent" | "answered" | "no_answer" | "dropped";
+  answer_by: string | null;
+  sent_at: string | null;
+  answered_at: string | null;
+}
+
+/** What the action agent is doing about one risk right now, for the overview. */
+export interface AgentWork {
+  risk_id: number;
+  title: string;
+  part_id: string | null;
+  state: "working" | "waiting_supplier" | "waiting_person" | "ordered" | "watching";
+  waiting_for: string | null; // who has to move next
+  until: string | null;       // ISO: answer or decision due
+  copies_at_risk: number;
+  value_at_risk_eur: number | null;
+  last_step: string | null;   // the agent's latest sentence about this risk
+  last_at: string | null;
+}
+
+/** Settings a person may change while the app runs. */
+export interface Settings {
+  autonomy_limit_eur: number;                 // below this cost the agent carries out a binding option itself. 0 = never
+  value_per_copy_eur: Record<string, number>; // product id -> EUR
 }
 
 export type MessageStatus = "draft" | "needs_approval" | "sent" | "outbox" | "received" | "rejected";
@@ -312,8 +387,11 @@ GET  /api/parts                            -> PartRow[]
 GET  /api/parts/:part_id                   -> PartDetail
 GET  /api/risks                            -> Risk[]
 GET  /api/decisions?status=pending|all     -> DecisionCard[]   (includes risk and mail_draft)
-POST /api/decisions/:id/approve            -> DecisionCard     body: { by?: string }
+POST /api/decisions/:id/approve            -> DecisionCard     body: { by?: string }   (signs for the next open signature, or the one that names `by`)
 POST /api/decisions/:id/reject             -> DecisionCard     body: { by?: string, reason?: string }
+GET  /api/questions?risk_id=               -> AgentQuestion[]
+GET  /api/settings                         -> Settings
+POST /api/settings                         -> Settings         body: Partial<Settings>
 GET  /api/threads                          -> Thread[]
 GET  /api/messages?folder=inbox|sent|needs_approval&thread_id=...  -> Message[]
 POST /api/messages/:id/approve             -> Message          body: { by?: string, body_original?: string } (sends it)

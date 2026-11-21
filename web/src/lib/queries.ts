@@ -49,7 +49,9 @@ function useAction<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
   })
 }
 
-export const useApproveDecision = () => useAction((id: number) => api.approveDecision(id))
+export const useApproveDecision = () => useAction(({ id, by }: { id: number; by?: string }) => api.approveDecision(id, by))
+export const useSettings = () => useQuery({ queryKey: ["settings"], queryFn: api.settings })
+export const useSaveSettings = () => useAction((patch: Parameters<typeof api.saveSettings>[0]) => api.saveSettings(patch))
 export const useRejectDecision = () =>
   useAction(({ id, reason }: { id: number; reason: string }) => api.rejectDecision(id, reason))
 export const useSendMessage = () =>

@@ -129,7 +129,7 @@
     "open_issues": 4,
     "open_tasks": 2,
     "needs_approval_mails": 1,
-    "pending_decisions": 1,
+    "pending_decisions": 2,
     "parts_at_risk": 2
   },
   "last_sync": {
@@ -144,5 +144,32 @@
     "source": "live",
     "mail": "outbox",
     "llm": true
-  }
+  },
+  "value_at_risk_eur": 708000,
+  "agent_work": [
+    {
+      "risk_id": 7,
+      "title": "Art book lot is booked ten times too high",
+      "part_id": "CMP-GAM-008",
+      "state": "waiting_person",
+      "waiting_for": "Paul Winter",
+      "until": "2026-11-21T23:25:00.000Z",
+      "copies_at_risk": 5900,
+      "value_at_risk_eur": 708000,
+      "last_step": "I prepared \"Order 8,000 art books from Karton Nowak's stock\" for Paul Winter: it saves 5,900 copies, worth EUR 708,000, and costs EUR 16,800. It needs a decision by Sun 22 Nov, 00:25.",
+      "last_at": "2026-11-21T13:28:30Z"
+    },
+    {
+      "risk_id": 9,
+      "title": "Statue lot failed incoming inspection",
+      "part_id": "CMP-GAM-010",
+      "state": "waiting_supplier",
+      "waiting_for": "Pune Diecast Works",
+      "until": "2026-11-21T15:30:00.000Z",
+      "copies_at_risk": 3400,
+      "value_at_risk_eur": 408000,
+      "last_step": "I wrote one mail to Pune Diecast Works with 2 questions and sent it.",
+      "last_at": "2026-11-21T13:31:10Z"
+    }
+  ]
 }

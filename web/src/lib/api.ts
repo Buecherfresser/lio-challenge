@@ -9,6 +9,7 @@ import type {
   Overview,
   PartDetail,
   PartRow,
+  Settings,
   Status,
   Task,
   Thread,
@@ -72,7 +73,9 @@ export const api = {
   map: () => get<MapView>("/api/map"),
   part: (partId: string) => get<PartDetail>(`/api/parts/${encodeURIComponent(partId)}`),
   decisions: () => get<DecisionCard[]>("/api/decisions?status=all"),
-  approveDecision: (id: number) => post<DecisionCard>(`/api/decisions/${id}/approve`),
+  approveDecision: (id: number, by?: string) => post<DecisionCard>(`/api/decisions/${id}/approve`, by ? { by } : {}),
+  settings: () => get<Settings>("/api/settings"),
+  saveSettings: (patch: Partial<Settings>) => post<Settings>("/api/settings", patch),
   rejectDecision: (id: number, reason: string) =>
     post<DecisionCard>(`/api/decisions/${id}/reject`, reason ? { reason } : {}),
   threads: () => get<Thread[]>("/api/threads"),

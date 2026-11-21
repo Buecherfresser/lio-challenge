@@ -71,6 +71,8 @@ export interface Snapshot {
   stock: StockRow[];
   shipments: ShipmentRow[];
   routes: RouteRow[];
+  /** What-if changes of approved decisions that are in flight (ordered, not delivered yet), oldest first. See planOf in parts.ts. */
+  planned: { decision_id: number; scenario: string }[];
   /** Results computed from this snapshot, so one request (and the next few seconds) computes each table once. */
   memo: Map<string, unknown>;
 }
@@ -78,8 +80,12 @@ export interface Snapshot {
 /** Changes whenever the data the compute tools read may have changed. */
 export function dataSignature(): string {
   const f = get<{ m: number | null }>("SELECT MAX(id) AS m FROM facts")?.m ?? 0;
-  return `${f}|${kv.get("last_sync") ?? ""}`;
+  return `${f}|${kv.get("last_sync") ?? ""}|${kv.get(PLAN_REV) ?? "0"}`;
 }
+
+const PLAN_REV = "plan_rev";
+/** Call after a decision was approved, closed or withdrawn, so the numbers are computed again with the new plan. */
+export function planChanged() { kv.set(PLAN_REV, String(Number(kv.get(PLAN_REV) ?? "0") + 1)); cached = null; }
 
 let cached: Snapshot | null = null;
 
@@ -103,6 +109,7 @@ export function loadSnapshot(fresh = false): Snapshot {
     stock: all<StockRow>("SELECT snapshot_date, material_id, batch, quantity FROM stock ORDER BY id"),
     shipments: all<ShipmentRow>("SELECT shipment_id, mode, reference, supplier_id, po_numbers, part_ids, route_id, origin, destination, via, dest_site, etd, eta, status, note, updated_at, last_lat, last_lon FROM shipments ORDER BY shipment_id"),
     routes: all<RouteRow>("SELECT route_id, origin, destination, mode, transit_days FROM routes"),
+    planned: all<{ decision_id: number; scenario: string }>("SELECT id AS decision_id, scenario FROM decisions WHERE status = 'approved' AND stage IN ('approved', 'ordered') ORDER BY id"),
     memo: new Map(),
   };
   return cached;

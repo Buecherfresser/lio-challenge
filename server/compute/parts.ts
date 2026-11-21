@@ -7,12 +7,31 @@ import { buildWorld, supplyTotals } from "./world.ts";
 import type { PartState, World } from "./world.ts";
 import { computeEditions, toEditionStatus } from "./editions.ts";
 import type { EditionDetail } from "./editions.ts";
-import { EMPTY_SCENARIO } from "./scenario.ts";
+import { EMPTY_SCENARIO, normalizeScenario } from "./scenario.ts";
+import type { Scenario, ScenarioChange } from "./scenario.ts";
+import { json } from "../db.ts";
 import { issuesFor, riskRows, toRisk } from "./rows.ts";
 
 // The parts view and the copies per edition for the current state. Cached with the snapshot.
 
-export const currentWorld = (snap: Snapshot = loadSnapshot()): World => memo(snap, "world", () => buildWorld(snap, EMPTY_SCENARIO));
+/**
+ * The plan: what approved decisions have set in motion and the data does not show yet (an order that is placed, a lot that is
+ * released). It counts as part of the current state, so the numbers move the moment a decision is approved.
+ * Supply that is ordered stays uncertain until it is in the building. A decision whose lot or shipment is gone from the data is left out.
+ */
+export const planOf = (snap: Snapshot = loadSnapshot()): Scenario => memo(snap, "plan", () => {
+  const changes: ScenarioChange[] = [];
+  for (const d of snap.planned) {
+    const sc = normalizeScenario(json<unknown>(d.scenario, {})).scenario;
+    const own = sc.changes.filter((c) => c.type !== "already_short").map((c) => (c.type === "add_supply" ? { ...c, certainty: "uncertain" as const } : c));
+    if (own.length && buildWorld(snap, { changes: own }).problems.length === 0) changes.push(...own);
+  }
+  return { changes };
+});
+/** A what-if on top of the plan. */
+export const withPlan = (snap: Snapshot, scenario: Scenario): Scenario => { const plan = planOf(snap); return plan.changes.length ? { changes: [...plan.changes, ...scenario.changes] } : scenario; };
+
+export const currentWorld = (snap: Snapshot = loadSnapshot()): World => memo(snap, "world", () => buildWorld(snap, withPlan(snap, EMPTY_SCENARIO)));
 export const editionDetails = (snap: Snapshot = loadSnapshot()): EditionDetail[] => memo(snap, "editions", () => computeEditions(currentWorld(snap)));
 /** Copies per edition: safe, uncertain, lost. */
 export const editions = (snap: Snapshot = loadSnapshot()): EditionStatus[] => editionDetails(snap).map(toEditionStatus);

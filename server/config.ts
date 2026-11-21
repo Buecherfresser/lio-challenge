@@ -83,8 +83,8 @@ export const config = {
     fromName: env("MAIL_FROM_NAME", "Soony Procurement"),
     smtp: { host: env("SMTP_HOST"), port: num("SMTP_PORT", 465), user: env("SMTP_USER"), pass: env("SMTP_PASS") },
     imap: { host: env("IMAP_HOST"), port: num("IMAP_PORT", 993), user: env("IMAP_USER"), pass: env("IMAP_PASS"), pollSec: num("IMAP_POLL_SEC", 120) },
-    autoSendClarifications: bool("AUTO_SEND_CLARIFICATIONS", false),
-    sendOnApproval: bool("SEND_ON_APPROVAL", false),
+    autoSendClarifications: bool("AUTO_SEND_CLARIFICATIONS", true),
+    sendOnApproval: bool("SEND_ON_APPROVAL", true),
   },
 };
 

@@ -1,4 +1,4 @@
-import type { Approver, DecisionCard, Issue, Message, ObjectRef, Risk, ToolCallTrace } from "../../shared/api.ts";
+import type { Approver, DecisionCard, DecisionReport, Issue, Message, ObjectRef, Risk, Signature, ToolCallTrace } from "../../shared/api.ts";
 import { all, get, json } from "../db.ts";
 import { factsById } from "../facts.ts";
 
@@ -55,19 +55,47 @@ export const messageById = (id: number): Message | null => { const r = get<Messa
 interface DecisionDb {
   id: number; risk_id: number; status: DecisionCard["status"]; title: string; option: string; rationale: string; copies_saved: number; copies_by_product: string;
   cost_eur: number | null; cost_basis: string; approver: string; mail_message_id: number | null; created_by: DecisionCard["created_by"]; created_at: string; decided_at: string | null; decided_by: string | null;
+  decision_reason: string | null; approval_kind: string; value_eur: number | null; decide_by: string | null; wait_copies_per_hour: number | null; wait_eur_per_hour: number | null; timing_basis: string | null;
+  report: string; signatures: string; stage: DecisionCard["stage"]; auto: number; scenario: string; check_at: string | null; closed_reason: string | null;
 }
 const NO_APPROVER: Approver = { role: "unknown", person: null, rule: "No approver was stored with this decision.", available: false, note: null };
-export function toDecision(r: DecisionDb): DecisionCard {
+/** Value minus cost. An option whose cost needs a quote counts with its value alone when options are ranked. */
+const worth = (r: DecisionDb) => (r.value_eur ?? 0) - (r.cost_eur ?? 0);
+/** Per risk the pending option that is worth most, and on a tie the one that saves more copies. Only that one is recommended. */
+function recommendedIds(): Set<number> {
+  const best = new Map<number, DecisionDb>();
+  for (const r of all<DecisionDb>("SELECT * FROM decisions WHERE status = 'pending'")) {
+    const b = best.get(r.risk_id);
+    if (!b || worth(r) > worth(b) || (worth(r) === worth(b) && r.copies_saved > b.copies_saved)) best.set(r.risk_id, r);
+  }
+  return new Set([...best.values()].filter((r) => r.copies_saved > 0).map((r) => r.id));
+}
+export function toDecision(r: DecisionDb, recommended: Set<number> = recommendedIds()): DecisionCard {
   const risk = riskById(r.risk_id);
+  const report = json<DecisionReport | null>(r.report, null);
   return {
-    id: r.id, risk_id: r.risk_id, status: r.status, title: r.title, option: r.option, rationale: r.rationale, copies_saved: r.copies_saved,
-    copies_by_product: json<DecisionCard["copies_by_product"]>(r.copies_by_product, []), cost_eur: r.cost_eur, cost_basis: r.cost_basis,
-    approver: json<Approver>(r.approver, NO_APPROVER), mail_draft: r.mail_message_id ? messageById(r.mail_message_id) : null,
+    id: r.id, risk_id: r.risk_id, status: r.status, stage: r.stage ?? "proposed", title: r.title, option: r.option, rationale: r.rationale, copies_saved: r.copies_saved,
+    copies_by_product: json<DecisionCard["copies_by_product"]>(r.copies_by_product, []), value_eur: r.value_eur, cost_eur: r.cost_eur, cost_basis: r.cost_basis,
+    net_eur: r.value_eur !== null && r.cost_eur !== null ? Math.round((r.value_eur - r.cost_eur) * 100) / 100 : null,
+    decide_by: r.decide_by, wait_copies_per_hour: r.wait_copies_per_hour, wait_eur_per_hour: r.wait_eur_per_hour, timing_basis: r.timing_basis,
+    recommended: r.status === "pending" && recommended.has(r.id), approval_kind: r.approval_kind ?? "other",
+    approver: json<Approver>(r.approver, NO_APPROVER), signatures: json<Signature[]>(r.signatures, []), auto: Boolean(r.auto),
+    report: report && Array.isArray(report.research) ? report : null,
+    ...(report && Array.isArray(report.research) ? { report_facts: factsById([...new Set([...report.research, ...(report.agreed ?? [])].flatMap((l) => l.fact_ids ?? []))]) } : {}),
+    mail_draft: r.mail_message_id ? messageById(r.mail_message_id) : null,
     ...(risk ? { risk: toRisk(risk, { facts: true, trace: false }) } : {}),
-    created_by: r.created_by, created_at: r.created_at, decided_at: r.decided_at, decided_by: r.decided_by,
+    created_by: r.created_by, created_at: r.created_at, decided_at: r.decided_at, decided_by: r.decided_by, decision_reason: r.decision_reason,
   };
 }
-export const decisions = (status?: string): DecisionCard[] =>
-  (status && status !== "all" ? all<DecisionDb>("SELECT * FROM decisions WHERE status = ? ORDER BY copies_saved DESC, id DESC", status) : all<DecisionDb>("SELECT * FROM decisions ORDER BY id DESC")).map(toDecision);
+/** Pending cards come in the order a person should take them: the nearest deadline first, then the most valuable. */
+export function decisions(status?: string): DecisionCard[] {
+  const rec = recommendedIds();
+  const rows = status && status !== "all"
+    ? all<DecisionDb>("SELECT * FROM decisions WHERE status = ? ORDER BY CASE WHEN decide_by IS NULL THEN 1 ELSE 0 END, decide_by, IFNULL(value_eur, 0) DESC, copies_saved DESC, id DESC", status)
+    : all<DecisionDb>("SELECT * FROM decisions ORDER BY id DESC");
+  return rows.map((r) => toDecision(r, rec));
+}
 export const decisionById = (id: number): DecisionCard | null => { const r = get<DecisionDb>("SELECT * FROM decisions WHERE id = ?", id); return r ? toDecision(r) : null; };
+export const decisionRows = (where = "1 = 1", ...params: unknown[]): DecisionDb[] => all<DecisionDb>(`SELECT * FROM decisions WHERE ${where} ORDER BY id`, ...params);
+export type { DecisionDb };
 export const decisionMailId = (id: number): number | null => get<{ mail_message_id: number | null }>("SELECT mail_message_id FROM decisions WHERE id = ?", id)?.mail_message_id ?? null;

@@ -18,7 +18,9 @@ export interface ApprovalQuery {
   category?: string | null;     // part category, to pick the responsible lead or buyer
   part_id?: string | null;      // alternative to category
 }
-export interface ApprovalAnswer { approver: Approver; amount_eur: number | null; fact_ids: number[] }
+/** One person who has to sign. When the role is vacant, `person` is the deputy or the next one up the line who can sign today. */
+export interface Signer { role: string; person: string | null; stands_in_for: string | null }
+export interface ApprovalAnswer { approver: Approver; amount_eur: number | null; fact_ids: number[]; signers: Signer[] }
 
 interface Rule { kind: string; role: string; limit_eur: number | null; scope: string; text: string; policy: string; fact: Fact }
 interface Role { title: string; person: string | null; vacant: boolean; deputy: string | null; reports_to: string | null; available_from: string | null; fact_ids: number[] }
@@ -103,7 +105,7 @@ export function approvalFor(q: ApprovalQuery, snap: Snapshot = loadSnapshot()): 
     : "";
 
   if (!rules.length) {
-    return { approver: { role: "unknown", person: null, rule: "The approval policy has not been read yet.", available: false, note: "I cannot name an approver before the policy is read." }, amount_eur: amountEur, fact_ids: [] };
+    return { approver: { role: "unknown", person: null, rule: "The approval policy has not been read yet.", available: false, note: "I cannot name an approver before the policy is read." }, amount_eur: amountEur, fact_ids: [], signers: [] };
   }
 
   let pool = rules.filter((r) => r.kind === q.kind);
@@ -112,7 +114,7 @@ export function approvalFor(q: ApprovalQuery, snap: Snapshot = loadSnapshot()): 
     pool = rules.filter((r) => r.kind === "exception");
     fallback = `The policy has no rule for ${q.kind.replace(/_/g, " ")}, so the rule for exceptions applies. `;
     if (!pool.length) {
-      return { approver: { role: "unknown", person: null, rule: `The policy facts on file have no rule for ${q.kind.replace(/_/g, " ")} and none for exceptions.`, available: false, note: null }, amount_eur: amountEur, fact_ids: [] };
+      return { approver: { role: "unknown", person: null, rule: `The policy facts on file have no rule for ${q.kind.replace(/_/g, " ")} and none for exceptions.`, available: false, note: null }, amount_eur: amountEur, fact_ids: [], signers: [] };
     }
   }
 
@@ -145,16 +147,20 @@ export function approvalFor(q: ApprovalQuery, snap: Snapshot = loadSnapshot()): 
   if (valueNote) notes.push(valueNote);
   let available = true;
   const people: string[] = [];
+  const signs: Signer[] = [];
   for (const s of signers) {
     if (!s.role) {
+      signs.push({ role: s.name, person: null, stands_in_for: null });
       available = false;
       notes.push(s.candidates.length ? `"${s.name}" fits several roles (${s.candidates.join(", ")}) and the part category does not decide it.` : roles.size ? `The role "${s.name}" is not on the organisation chart on file.` : "The organisation chart has not been read yet.");
       continue;
     }
     if (s.role.person) people.push(s.role.person);
+    if (!(s.role.vacant || s.role.available_from)) signs.push({ role: s.role.title, person: s.role.person, stands_in_for: null });
     if (s.role.vacant || s.role.available_from) {
       available = false;
       const up = escalation(s.role, roles);
+      signs.push(s.role.deputy ? { role: s.role.title, person: s.role.deputy, stands_in_for: s.role.title } : up ? { role: up.title, person: up.person, stands_in_for: s.role.title } : { role: s.role.title, person: null, stands_in_for: null });
       const why = s.role.vacant ? `The role ${s.role.title} is vacant.` : `${s.role.person} starts as ${s.role.title} on ${fmtDate(s.role.available_from)}.`;
       notes.push(`${why} ${s.role.deputy ? `The deputy is ${s.role.deputy}.` : up ? `${s.role.vacant ? "It" : "Until then it"} goes to ${up.title} (${up.person}).` : "The organisation chart on file names nobody above this role who can sign."}`);
     }
@@ -171,5 +177,6 @@ export function approvalFor(q: ApprovalQuery, snap: Snapshot = loadSnapshot()): 
     },
     amount_eur: amountEur,
     fact_ids: [...new Set([...chosen.map((r) => r.fact.id), ...signers.flatMap((s) => s.role?.fact_ids ?? [])])],
+    signers: signs,
   };
 }

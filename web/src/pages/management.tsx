@@ -4,7 +4,7 @@ import type { EditionStatus, Overview } from "@shared/api.ts"
 import { ErrorState } from "@/components/states"
 import { SupplyMapPanel } from "@/components/supply-map"
 import { Skeleton } from "@/components/ui/skeleton"
-import { num, weekdayTime } from "@/lib/format"
+import { eur, num, weekdayTime } from "@/lib/format"
 import { useMap, useOverview, useParts } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
@@ -115,6 +115,17 @@ function DecisionsLine({ count }: { count: number }) {
   )
 }
 
+/** What the lost copies cost as things stand. Shown only when copies are lost and a value per copy is set. */
+function MoneyLine({ overview }: { overview: Overview }) {
+  if (!overview.value_at_risk_eur) return null
+  return (
+    <p className="max-w-2xl text-sm">
+      <span className="font-semibold tabular-nums">{eur(overview.value_at_risk_eur)}</span>{" "}
+      <span className="text-muted-foreground">is what the lost copies cost as things stand.</span>
+    </p>
+  )
+}
+
 export function ManagementPage() {
   const overview = useOverview()
   const map = useMap()
@@ -134,7 +145,10 @@ export function ManagementPage() {
         <p className="text-sm text-muted-foreground">No editions yet. The first sync loads them.</p>
       ) : (
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <Headline overview={overview.data} />
+          <div className="min-w-0 flex-1 space-y-4">
+            <Headline overview={overview.data} />
+            <MoneyLine overview={overview.data} />
+          </div>
           <DecisionsLine count={overview.data.counts.pending_decisions} />
         </div>
       )}

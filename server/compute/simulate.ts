@@ -3,7 +3,7 @@ import { loadSnapshot } from "./state.ts";
 import type { Snapshot } from "./state.ts";
 import { buildWorld } from "./world.ts";
 import { computeEditions, toEditionStatus } from "./editions.ts";
-import { currentWorld, editions } from "./parts.ts";
+import { currentWorld, editions, withPlan } from "./parts.ts";
 import { normalizeScenario } from "./scenario.ts";
 import type { Scenario } from "./scenario.ts";
 
@@ -34,7 +34,7 @@ const byId = (list: EditionStatus[]) => new Map(list.map((e) => [e.product_id, e
 const sum = (list: CopiesByProduct[]) => list.reduce((s, x) => s + x.copies, 0);
 
 function editionsUnder(snap: Snapshot, scenario: Scenario, unlimitedParts?: Set<string>): { editions: EditionStatus[]; problems: string[] } {
-  const world = buildWorld(snap, scenario, { unlimitedParts });
+  const world = buildWorld(snap, withPlan(snap, scenario), { unlimitedParts });
   return { editions: computeEditions(world).map(toEditionStatus), problems: world.problems };
 }
 

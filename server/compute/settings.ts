@@ -5,6 +5,15 @@ import "../config.ts"; // loads .env before we read process.env
 const env = (k: string, d = "") => (process.env[k] ?? "").trim() || d;
 const num = (k: string, d: number) => (env(k) && Number.isFinite(Number(env(k))) ? Number(env(k)) : d);
 const bool = (k: string, d: boolean) => (env(k) ? /^(1|true|yes|on)$/i.test(env(k)) : d);
+function parseMap(s: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of s.split(",").map((x) => x.trim()).filter(Boolean)) {
+    const i = part.lastIndexOf("=");
+    const k = part.slice(0, i).trim(), v = Number(part.slice(i + 1));
+    if (i > 0 && k && Number.isFinite(v)) out[k] = v;
+  }
+  return out;
+}
 
 export const settings = {
   /** UTC offset of the distribution center. Used to read date-only values and to print times. */
@@ -31,6 +40,16 @@ export const settings = {
   traceResultMaxChars: num("TRACE_RESULT_MAX_CHARS", 4000),
   /** Decision options the action agent may propose per risk. */
   maxOptionsPerRisk: num("ACTION_MAX_OPTIONS", 3),
+  /** Tool-calling steps the action agent may take for one risk. */
+  actionAgentMaxSteps: num("ACTION_AGENT_MAX_STEPS", 30),
+  /** Risks the action agent works on in one cycle, the most expensive first. */
+  actionMaxRisksPerRun: num("ACTION_MAX_RISKS_PER_RUN", 4),
+  /** Hours a supplier or colleague gets to answer a question before the one reminder is due. */
+  answerHours: num("ACTION_ANSWER_HOURS", 2),
+  /** What one copy that makes day one is worth, per product, in EUR ("FG-A=120,FG-B=32"). Empty = decision cards show copies only. */
+  valuePerCopyEur: parseMap(env("VALUE_PER_COPY_EUR")),
+  /** Below this cost the action agent carries out a binding option on its own and reports it. 0 = a person approves every binding option. */
+  autonomyLimitEur: num("AUTONOMY_LIMIT_EUR", 0),
 };
 
 const offsetMs = (() => {
