@@ -186,16 +186,18 @@ function emitFacts(table: string, rows: Record<string, unknown>[], doc: DocRow):
   const put = (object_type: ObjectType, object_id: string, field: string, value: unknown, extra: { unit?: string | null; part_id?: string | null; observed_at?: string | null } = {}) => {
     if (value === null || value === undefined || value === "") return;
     const r = addFact({ object_type, object_id, field, value: String(value), unit: extra.unit ?? null, part_id: extra.part_id ?? null,
-      source_path: doc.path, source_version: doc.version, document_id: doc.id, observed_at: extra.observed_at ?? doc.seen_at, origin: "code", confidence: 1 });
+      source_path: doc.path, source_version: doc.version, document_id: doc.id, observed_at: extra.observed_at === undefined ? doc.seen_at : extra.observed_at, origin: "code", confidence: 1 });
     if (r.isNew) n++;
   };
   const bool = (v: unknown) => (v ? "true" : "false");
   for (const r of rows) {
     switch (table) {
       case "components":
-        put("part", r.part_id as string, "drawing_rev", r.drawing_rev); put("part", r.part_id as string, "critical", bool(r.critical)); break;
+        // Master data carries no date of its own. The time we downloaded the file is not when it was true, so these
+        // values have no date and any dated change (an engineering change, a vendor master update) wins over them.
+        put("part", r.part_id as string, "drawing_rev", r.drawing_rev, { observed_at: null }); put("part", r.part_id as string, "critical", bool(r.critical), { observed_at: null }); break;
       case "suppliers":
-        for (const k of ["status", "qualification_status", "contact_email", "language"]) put("supplier", r.supplier_id as string, k, r[k]); break;
+        for (const k of ["status", "qualification_status", "contact_email", "language"]) put("supplier", r.supplier_id as string, k, r[k], { observed_at: null }); break;
       case "po_lines": {
         const id = `${r.po_number}/${lineNo(r.po_line as number | null, rows)}`; const part = r.part_id as string;
         put("po_line", id, "qty_ordered", r.quantity, { part_id: part });

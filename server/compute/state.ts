@@ -1,3 +1,4 @@
+import { VOCAB } from "../vocab.ts";
 import type { Fact } from "../../shared/api.ts";
 import { config } from "../config.ts";
 import { all, get, kv } from "../db.ts";
@@ -19,8 +20,12 @@ export interface FactIndex {
   ofField(type: string, field: string): Fact[];
 }
 
-const factKey = (f: Fact) => `${f.observed_at ?? ""}|${String(f.id).padStart(12, "0")}`;
+// A date without a time counts as the start of that day, so it sorts before a timestamp of the same day.
+const factKey = (f: Fact) => `${!f.observed_at ? "" : f.observed_at.length === 10 ? `${f.observed_at}T00:00:00.000Z` : f.observed_at}#${String(f.id).padStart(12, "0")}`;
 export const newestFact = (rows: Fact[]): Fact | null => (rows.length ? rows.reduce((a, b) => (factKey(b) > factKey(a) ? b : a)) : null);
+
+// Free-text fields where one source can make several separate statements, which all stand.
+const VOCAB_FREE = new Set(Object.values(VOCAB).flatMap((t) => Object.entries(t!.fields).filter(([, d]) => d.compare === false).map(([k]) => k)));
 
 export function makeFactIndex(facts: Fact[]): FactIndex {
   const byKey = new Map<string, Fact[]>(), byObject = new Map<string, Fact[]>(), byField = new Map<string, Fact[]>();
@@ -30,9 +35,16 @@ export function makeFactIndex(facts: Fact[]): FactIndex {
     push(byObject, `${f.object_type}|${f.object_id}`, f);
     push(byField, `${f.object_type}|${f.field}`, f);
   }
+  // What each source says now: of several statements by the same source about the same thing, the last one counts.
   const current = (type: string, id: string, field: string, partId?: string | null) => {
-    const rows = byKey.get(`${type}|${id}|${field}`) ?? [];
-    return partId ? rows.filter((f) => f.part_id === partId) : rows;
+    const rows = (byKey.get(`${type}|${id}|${field}`) ?? []).filter((f) => !partId || f.part_id === partId);
+    const last = new Map<string, Fact>();
+    for (const f of rows) {
+      const k = `${f.source_path}|${f.part_id ?? ""}|${VOCAB_FREE.has(field) ? f.value : ""}`;
+      const prev = last.get(k);
+      if (!prev || f.id > prev.id) last.set(k, f);
+    }
+    return [...last.values()];
   };
   const latest = (type: string, id: string, field: string, partId?: string | null) => newestFact(current(type, id, field, partId));
   return {

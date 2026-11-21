@@ -24,11 +24,12 @@ export interface NewFact {
  * existing fact id is returned, so a re-read of an unchanged value does not grow the table.
  */
 export function addFact(f: NewFact): { id: number; isNew: boolean } {
-  const last = get<{ id: number; value: string }>(
-    `SELECT id, value FROM facts WHERE object_type = ? AND object_id = ? AND field = ? AND source_path = ? AND IFNULL(part_id, '') = ? ORDER BY id DESC LIMIT 1`,
+  const last = get<{ id: number; value: string; observed_at: string | null }>(
+    `SELECT id, value, observed_at FROM facts WHERE object_type = ? AND object_id = ? AND field = ? AND source_path = ? AND IFNULL(part_id, '') = ? ORDER BY id DESC LIMIT 1`,
     f.object_type, f.object_id, f.field, f.source_path, f.part_id ?? "",
   );
-  if (last && last.value === f.value) return { id: last.id, isNew: false };
+  // Same value with a different date is a new statement (for example a corrected date), so it is written again.
+  if (last && last.value === f.value && (last.observed_at ?? null) === (f.observed_at ?? null)) return { id: last.id, isNew: false };
   const r = run(
     `INSERT INTO facts (object_type, object_id, field, value, unit, part_id, source_path, source_version, document_id, observed_at, recorded_at, origin, confidence, quote)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
