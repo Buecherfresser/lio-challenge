@@ -1,0 +1,260 @@
+[
+  {
+    "products": [
+      {
+        "product_id": "GH6-COL",
+        "name": "Grand Heist 6 Collector's",
+        "qty_per": 1
+      }
+    ],
+    "open_issues": 1,
+    "open_questions": 1,
+    "part_id": "P-2001",
+    "description": "Collector statue",
+    "category": "figure",
+    "status": "lost",
+    "suppliers": [
+      {
+        "supplier_id": "SUP-0042",
+        "name": "Pune Diecast Works"
+      }
+    ],
+    "need": 6000,
+    "ordered": 6000,
+    "confirmed": 6000,
+    "shipped": 1200,
+    "in_transit": 1200,
+    "arrived": 4800,
+    "stock": 4800,
+    "usable": 4800,
+    "available_safe": 4800,
+    "available_uncertain": 0,
+    "gap": 1200
+  },
+  {
+    "products": [
+      {
+        "product_id": "GH6-STD",
+        "name": "Grand Heist 6 Standard",
+        "qty_per": 1
+      },
+      {
+        "product_id": "GH6-COL",
+        "name": "Grand Heist 6 Collector's",
+        "qty_per": 1
+      }
+    ],
+    "open_issues": 2,
+    "open_questions": 1,
+    "part_id": "P-1001",
+    "description": "Game card 64 GB",
+    "category": "electronics",
+    "status": "uncertain",
+    "suppliers": [
+      {
+        "supplier_id": "SUP-0010",
+        "name": "Hwaseong Memory"
+      },
+      {
+        "supplier_id": "SUP-0021",
+        "name": "Boise Semi"
+      }
+    ],
+    "need": 28500,
+    "ordered": 30000,
+    "confirmed": 30000,
+    "shipped": 16000,
+    "in_transit": 16000,
+    "arrived": 14000,
+    "stock": 14000,
+    "usable": 14000,
+    "available_safe": 14000,
+    "available_uncertain": 14500,
+    "gap": 0
+  },
+  {
+    "products": [
+      {
+        "product_id": "GH6-STD",
+        "name": "Grand Heist 6 Standard",
+        "qty_per": 1
+      },
+      {
+        "product_id": "GH6-COL",
+        "name": "Grand Heist 6 Collector's",
+        "qty_per": 1
+      }
+    ],
+    "open_issues": 0,
+    "open_questions": 0,
+    "part_id": "P-3001",
+    "description": "Outer box",
+    "category": "packaging",
+    "status": "ok",
+    "suppliers": [
+      {
+        "supplier_id": "SUP-0031",
+        "name": "Guangzhou PackRight"
+      }
+    ],
+    "need": 28500,
+    "ordered": 40000,
+    "confirmed": 40000,
+    "shipped": 40000,
+    "in_transit": 12000,
+    "arrived": 28000,
+    "stock": 29000,
+    "usable": 29000,
+    "available_safe": 29000,
+    "available_uncertain": 0,
+    "gap": 0
+  },
+  {
+    "products": [
+      {
+        "product_id": "GH6-STD",
+        "name": "Grand Heist 6 Standard",
+        "qty_per": 1
+      },
+      {
+        "product_id": "GH6-COL",
+        "name": "Grand Heist 6 Collector's",
+        "qty_per": 1
+      }
+    ],
+    "open_issues": 0,
+    "open_questions": 0,
+    "part_id": "P-3002",
+    "description": "Insert tray",
+    "category": "packaging",
+    "status": "ok",
+    "suppliers": [
+      {
+        "supplier_id": "SUP-0031",
+        "name": "Guangzhou PackRight"
+      }
+    ],
+    "need": 28500,
+    "ordered": 30000,
+    "confirmed": 30000,
+    "shipped": 30000,
+    "in_transit": 0,
+    "arrived": 30000,
+    "stock": 30000,
+    "usable": 30000,
+    "available_safe": 30000,
+    "available_uncertain": 0,
+    "gap": 0
+  },
+  {
+    "products": [
+      {
+        "product_id": "GH6-STD",
+        "name": "Grand Heist 6 Standard",
+        "qty_per": 1
+      },
+      {
+        "product_id": "GH6-COL",
+        "name": "Grand Heist 6 Collector's",
+        "qty_per": 1
+      }
+    ],
+    "open_issues": 0,
+    "open_questions": 0,
+    "part_id": "P-3003",
+    "description": "Game case",
+    "category": "packaging",
+    "status": "ok",
+    "suppliers": [
+      {
+        "supplier_id": "SUP-0032",
+        "name": "Dongguan Precision"
+      }
+    ],
+    "need": 28500,
+    "ordered": 50000,
+    "confirmed": 50000,
+    "shipped": 50000,
+    "in_transit": 20000,
+    "arrived": 30000,
+    "stock": 30000,
+    "usable": 30000,
+    "available_safe": 30000,
+    "available_uncertain": 0,
+    "gap": 0
+  },
+  {
+    "products": [
+      {
+        "product_id": "GH6-STD",
+        "name": "Grand Heist 6 Standard",
+        "qty_per": 1
+      },
+      {
+        "product_id": "GH6-COL",
+        "name": "Grand Heist 6 Collector's",
+        "qty_per": 1
+      }
+    ],
+    "open_issues": 0,
+    "open_questions": 0,
+    "part_id": "P-3004",
+    "description": "Shipping carton",
+    "category": "packaging",
+    "status": "ok",
+    "suppliers": [
+      {
+        "supplier_id": "SUP-0050",
+        "name": "Karton Nowak"
+      }
+    ],
+    "need": 2400,
+    "ordered": 6000,
+    "confirmed": 6000,
+    "shipped": 6000,
+    "in_transit": 3000,
+    "arrived": 3000,
+    "stock": 3000,
+    "usable": 3000,
+    "available_safe": 3000,
+    "available_uncertain": 3000,
+    "gap": 0
+  },
+  {
+    "products": [
+      {
+        "product_id": "GH6-STD",
+        "name": "Grand Heist 6 Standard",
+        "qty_per": 1
+      },
+      {
+        "product_id": "GH6-COL",
+        "name": "Grand Heist 6 Collector's",
+        "qty_per": 1
+      }
+    ],
+    "open_issues": 0,
+    "open_questions": 0,
+    "part_id": "P-3005",
+    "description": "Manual",
+    "category": "print",
+    "status": "ok",
+    "suppliers": [
+      {
+        "supplier_id": "SUP-0031",
+        "name": "Guangzhou PackRight"
+      }
+    ],
+    "need": 28500,
+    "ordered": 40000,
+    "confirmed": 40000,
+    "shipped": 40000,
+    "in_transit": 12000,
+    "arrived": 28000,
+    "stock": 29000,
+    "usable": 29000,
+    "available_safe": 29000,
+    "available_uncertain": 0,
+    "gap": 0
+  }
+]

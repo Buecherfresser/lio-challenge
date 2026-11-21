@@ -8,6 +8,7 @@ import { EVENTS_PAGE_SIZE } from "@/lib/config"
 export const useOverview = () => useQuery({ queryKey: ["overview"], queryFn: api.overview })
 export const useStatus = () => useQuery({ queryKey: ["status"], queryFn: api.status })
 export const useParts = () => useQuery({ queryKey: ["parts"], queryFn: api.parts })
+export const useMap = () => useQuery({ queryKey: ["map"], queryFn: api.map })
 export const usePart = (partId: string | undefined) =>
   useQuery({ queryKey: ["part", partId], queryFn: () => api.part(partId!), enabled: Boolean(partId) })
 export const useDecisions = () => useQuery({ queryKey: ["decisions"], queryFn: api.decisions })

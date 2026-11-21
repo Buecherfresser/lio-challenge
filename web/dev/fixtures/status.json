@@ -1,0 +1,29 @@
+{
+  "now": "2026-11-21T19:00:00Z",
+  "running": {
+    "sync": false,
+    "data_agent": false,
+    "risk_agent": false,
+    "action_agent": false
+  },
+  "queue": {
+    "documents_pending": 0,
+    "documents_done": 118,
+    "documents_failed": 0
+  },
+  "last_sync": {
+    "at": "2026-11-21T18:57:00Z",
+    "snapshot_id": 42,
+    "added": 1,
+    "changed": 3,
+    "removed": 0,
+    "source": "live"
+  },
+  "mode": {
+    "source": "live",
+    "mail": "outbox",
+    "llm": true
+  },
+  "spend_usd": 1.84,
+  "replay": null
+}

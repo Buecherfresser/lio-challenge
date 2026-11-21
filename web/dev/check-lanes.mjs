@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs"
 import { geoContains, geoInterpolate, geoDistance } from "d3-geo"
 import { feature } from "topojson-client"
-import { SEA_NODES, nearestNode, seaRoute } from "../src/lib/geo/sea-lanes.ts"
+import { SEA_NODES, nearestNode, seaRoute, shortestLane } from "../src/lib/geo/sea-lanes.ts"
 
 const topo = JSON.parse(readFileSync(new URL("../node_modules/world-atlas/land-50m.json", import.meta.url)))
 const land = feature(topo, topo.objects.land)
@@ -25,4 +25,7 @@ const P = { YTN: [114.27, 22.57], HAM: [9.97, 53.54], PUS: [129.04, 35.08], NSA:
 for (const [a, b] of [["YTN", "HAM"], ["PUS", "HAM"], ["NSA", "HAM"], ["NYC", "HAM"], ["YTN", "CPT"], ["CPT", "HAM"]]) {
   const r = seaRoute(P[a], P[b])
   console.log(a, "->", b, nearestNode(P[a]).id, nearestNode(P[b]).id, r.length, "pts")
+}
+for (const [a, b] of [["YTN", "HAM"], ["PUS", "HAM"], ["NSA", "HAM"], ["NYC", "HAM"], ["CPT", "HAM"]]) {
+  console.log(a, b, shortestLane(nearestNode(P[a]).id, nearestNode(P[b]).id).join(" "))
 }

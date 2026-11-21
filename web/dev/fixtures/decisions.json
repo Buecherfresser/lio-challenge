@@ -1,0 +1,152 @@
+[
+  {
+    "copies_by_product": [
+      {
+        "product_id": "GH6-STD",
+        "copies": 1500
+      }
+    ],
+    "approver": {
+      "role": "Head of Procurement",
+      "person": "Mara Lindqvist",
+      "rule": "PP-07: up to €25,000",
+      "available": true,
+      "note": null
+    },
+    "mail_draft": null,
+    "created_by": "mock",
+    "created_at": "2026-11-21T14:20:00Z",
+    "decided_at": null,
+    "decided_by": null,
+    "id": 41,
+    "risk_id": 8,
+    "status": "pending",
+    "title": "Fly 1,500 cards from Hwaseong",
+    "option": "Hwaseong Memory ships 1,500 cards from stock by air via Incheon.",
+    "rationale": "Covers the rest of the stuck lot.",
+    "copies_saved": 1500,
+    "cost_eur": 14200,
+    "cost_basis": "Air freight quote €8.50/unit plus handling",
+    "risk": {
+      "id": 8,
+      "status": "open",
+      "part_id": "P-1001",
+      "product_id": null,
+      "supplier_id": "SUP-0010",
+      "title": "Port strike in Yantian holds 4,000 game cards",
+      "explanation": "The container with 4,000 game cards cannot leave Yantian before 25 Nov.",
+      "probability": 0.8,
+      "copies_at_risk": 4000,
+      "copies_by_product": [
+        {
+          "product_id": "GH6-STD",
+          "copies": 4000
+        }
+      ],
+      "scenario": {},
+      "fact_ids": [],
+      "tool_calls": [],
+      "created_at": "2026-11-21T14:10:00Z"
+    }
+  },
+  {
+    "copies_by_product": [
+      {
+        "product_id": "GH6-STD",
+        "copies": 2500
+      }
+    ],
+    "approver": {
+      "role": "Head of Procurement",
+      "person": "Mara Lindqvist",
+      "rule": "PP-07: up to €25,000",
+      "available": true,
+      "note": null
+    },
+    "mail_draft": null,
+    "created_by": "mock",
+    "created_at": "2026-11-21T14:20:00Z",
+    "decided_at": "2026-11-21T15:02:00Z",
+    "decided_by": "Mara Lindqvist",
+    "id": 40,
+    "risk_id": 8,
+    "status": "approved",
+    "title": "Truck 2,500 cards to Hong Kong and fly them",
+    "option": "Release 2,500 cards from the container in Yantian, truck them to Hong Kong airport and fly them to Hamburg.",
+    "rationale": "The strike does not affect Hong Kong airport.",
+    "copies_saved": 2500,
+    "cost_eur": 21800,
+    "cost_basis": "Truck €1,800 plus air freight €8.00/unit",
+    "risk": {
+      "id": 8,
+      "status": "open",
+      "part_id": "P-1001",
+      "product_id": null,
+      "supplier_id": "SUP-0010",
+      "title": "Port strike in Yantian holds 4,000 game cards",
+      "explanation": "The container with 4,000 game cards cannot leave Yantian before 25 Nov.",
+      "probability": 0.8,
+      "copies_at_risk": 4000,
+      "copies_by_product": [
+        {
+          "product_id": "GH6-STD",
+          "copies": 4000
+        }
+      ],
+      "scenario": {},
+      "fact_ids": [],
+      "tool_calls": [],
+      "created_at": "2026-11-21T14:10:00Z"
+    }
+  },
+  {
+    "copies_by_product": [
+      {
+        "product_id": "GH6-STD",
+        "copies": 0
+      }
+    ],
+    "approver": {
+      "role": "Head of Procurement",
+      "person": "Mara Lindqvist",
+      "rule": "PP-07: up to €25,000",
+      "available": true,
+      "note": null
+    },
+    "mail_draft": null,
+    "created_by": "mock",
+    "created_at": "2026-11-21T14:20:00Z",
+    "decided_at": "2026-11-21T15:30:00Z",
+    "decided_by": "Mara Lindqvist",
+    "id": 39,
+    "risk_id": 9,
+    "status": "rejected",
+    "title": "Fly the statues from Mumbai",
+    "option": "Unload 1,200 statues and fly them from Mumbai.",
+    "rationale": "The container already sailed.",
+    "copies_saved": 0,
+    "cost_eur": 9800,
+    "cost_basis": "Air freight quote",
+    "risk": {
+      "id": 9,
+      "status": "open",
+      "part_id": "P-2001",
+      "product_id": null,
+      "supplier_id": "SUP-0042",
+      "title": "Statues from Pune arrive on 1 Dec",
+      "explanation": "The vessel is due in Hamburg on 1 Dec, after the launch.",
+      "probability": 0.8,
+      "copies_at_risk": 1200,
+      "copies_by_product": [
+        {
+          "product_id": "GH6-STD",
+          "copies": 1200
+        }
+      ],
+      "scenario": {},
+      "fact_ids": [],
+      "tool_calls": [],
+      "created_at": "2026-11-21T14:10:00Z"
+    }
+  }
+]
