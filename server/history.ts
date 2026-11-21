@@ -66,6 +66,8 @@ const STATE: Record<HistoryWord, string> = {
   "New data": "nothing to do", "Risk": "risk found", "Supplier asked": "waiting for a supplier", "Supplier replied": "supplier replied", "Decision ready": "waiting for a decision",
   "Approved": "approved", "Ordered": "ordered", "Rejected": "rejected", "Confirmed": "confirmed", "Failed": "failed",
 };
+/** Marks a risk that was there before the recording started. */
+const BEFORE = 0;
 /** Tables that change on every cycle without anything happening. They do not count when two moments are compared. */
 const RESTLESS = new Set(["kv", "syncs"]);
 
@@ -135,6 +137,11 @@ export function record(eventRowId: number, e: Logged): void {
     if (!word && !between) return;
     if (!checked) { sameDatabase(); checked = true; }
 
+    // Until the first full reading is through there is nothing to go back to, so nothing is written down.
+    const pending = one<{ n: number }>("SELECT COUNT(*) AS n FROM documents WHERE current = 1 AND handler = 'openai' AND status = 'pending'")?.n ?? 0;
+    const started = meta.get("since") !== null;
+    if (!started && pending > 0) return;
+
     const tables: Record<string, string> = {};
     const fresh: [string, string][] = [];
     for (const t of stateTables()) {
@@ -152,13 +159,13 @@ export function record(eventRowId: number, e: Logged): void {
 
     const riskId = riskOf(e);
     const latestSync = one<{ m: number | null }>("SELECT MAX(id) AS m FROM syncs WHERE added + changed + removed > 0")?.m ?? null;
-    let eventId = latestSync;
-    if (riskId !== null) {
+    let eventId = started ? latestSync : null;
+    if (riskId !== null && started) {
       const origin = hist.prepare("SELECT event_id FROM risk_origin WHERE risk_id = ?").get(riskId) as { event_id: number } | undefined;
-      if (origin) eventId = origin.event_id;
+      // A risk from before the recording started belongs to no event: its later steps are kept, but not shown on a bar.
+      if (origin) eventId = origin.event_id === BEFORE ? null : origin.event_id;
       else if (latestSync !== null) hist.prepare("INSERT OR IGNORE INTO risk_origin (risk_id, event_id) VALUES (?, ?)").run(riskId, latestSync);
     }
-    const pending = one<{ n: number }>("SELECT COUNT(*) AS n FROM documents WHERE current = 1 AND handler = 'openai' AND status = 'pending'")?.n ?? 0;
     const lastFact = one<{ m: number | null }>("SELECT MAX(id) AS m FROM facts")?.m ?? 0;
     const detail = e.action === "sync.completed" ? JSON.stringify({ ...(e.output as object), source: (e.input as { source?: string } | undefined)?.source ?? null }) : null;
 
@@ -170,7 +177,12 @@ export function record(eventRowId: number, e: Logged): void {
         "INSERT INTO moments (at, real_at, word, action, summary, event_id, risk_id, detail, last_event_id, last_fact_id, pending, tables) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .run(nowIso(), new Date().toISOString(), word, e.action, e.summary.slice(0, 600), eventId, riskId, detail, eventRowId, lastFact, pending, JSON.stringify(tables)).lastInsertRowid);
       // The time bar starts once the first full reading is through: from then on, new data is an event worth looking at.
-      if (pending === 0 && meta.get("since") === null) meta.set("since", String(id));
+      if (!started) {
+        meta.set("since", String(id));
+        // Every risk that is already there came out of the first reading, not out of an event.
+        const mark = hist.prepare("INSERT OR IGNORE INTO risk_origin (risk_id, event_id) VALUES (?, ?)");
+        for (const r of db.prepare("SELECT id FROM risks").all() as { id: number }[]) mark.run(r.id, BEFORE);
+      }
       hist.exec("COMMIT");
     } catch (err) { hist.exec("ROLLBACK"); throw err; }
   } catch (err) {
