@@ -236,11 +236,78 @@ export interface Status {
   replay: { position: number; total: number } | null;
 }
 
+// ---- Supply map ----
+// What travels to the distribution center right now, with places as coordinates.
+// The backend states facts (places, times, quantities, classes). The dashboard draws the route lines
+// and estimates where a ship or plane is now from etd, eta and the last tracked position.
+
+export type TransportMode = "sea" | "air" | "truck" | "rail" | "unknown";
+
+export interface GeoPoint {
+  lat: number;
+  lon: number;
+  name: string;                // shown in tooltips only, never as a label on the map
+  kind: "supplier" | "port" | "airport" | "site" | "hub";
+  code: string | null;         // UN/LOCODE, site id or supplier id
+}
+
+export interface MapShipment {
+  shipment_id: string;
+  mode: TransportMode;
+  status: string;              // lower case, as the data states it (booked, departed, in_transit, at_port, ...)
+  departed: boolean;
+  supplier: { supplier_id: string; name: string } | null;
+  pickup: GeoPoint | null;     // the supplier's site, when it is not the place of loading (the leg "to port or airport")
+  origin: GeoPoint | null;     // port or airport of loading
+  via: GeoPoint[];             // stopovers the data names (transshipment port, hub airport), in order
+  destination: GeoPoint | null;// port or airport of discharge
+  final: GeoPoint | null;      // the distribution center, when the shipment does not end there (onward leg)
+  etd: string | null;          // ISO
+  eta: string | null;          // ISO, at destination
+  at_line: string | null;      // ISO, expected at the distribution center (onward leg included)
+  last_position: { lat: number; lon: number; at: string | null } | null; // tracking from the data, if any
+  parts: { part_id: string; description: string; quantity: number; status: PartStatus }[];
+  quantity: number;            // units on board, all parts
+  value: { amount: number; currency: string } | null;  // goods value from order prices
+  value_eur: number | null;    // the same in EUR, null if no rate is known
+  status_class: "safe" | "uncertain" | "lost"; // worst class of the units on board
+  critical: boolean;           // carries a part whose status is uncertain or lost: only these are drawn on the map
+  risk_ids: number[];          // open risks that name this shipment or its parts
+  disrupted: boolean;          // an open risk assumes this shipment does not arrive or arrives too late: route is crossed out
+}
+
+/** A replacement route from a decision card: drawn next to the crossed-out route it replaces. */
+export interface MapReplacement {
+  decision_id: number;
+  risk_id: number;
+  status: DecisionCard["status"];
+  title: string;
+  replaces_shipment_id: string | null;
+  part_id: string | null;
+  mode: TransportMode;
+  from: GeoPoint;
+  via: GeoPoint[];
+  to: GeoPoint;
+  quantity: number | null;
+  arrival: string | null;      // ISO, at the distribution center
+  cost_eur: number | null;
+  copies_saved: number;
+}
+
+export interface MapView {
+  now: string;
+  hub: GeoPoint;               // the distribution center (Hamburg)
+  suppliers: { supplier_id: string; name: string; point: GeoPoint; part_ids: string[]; status: PartStatus }[];
+  shipments: MapShipment[];    // open shipments of launch parts, critical or not
+  replacements: MapReplacement[];
+}
+
 /*
 HTTP API (all JSON, all under /api):
 
 GET  /api/overview                         -> Overview
 GET  /api/status                           -> Status
+GET  /api/map                              -> MapView
 GET  /api/parts                            -> PartRow[]
 GET  /api/parts/:part_id                   -> PartDetail
 GET  /api/risks                            -> Risk[]

@@ -1,6 +1,6 @@
 node_modules/
-data/
-data-*/
+/data/
+/data-*/
 .env
 web/dist/
 *.log

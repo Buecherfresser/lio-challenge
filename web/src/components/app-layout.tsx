@@ -1,19 +1,22 @@
 import { Clock, RefreshCw } from "lucide-react"
 import { Outlet, useLocation } from "react-router"
 import { AppSidebar } from "@/components/app-sidebar"
+import { ProductMark } from "@/components/product-mark"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ViewSwitch } from "@/components/view-switch"
 import { duration, timeOnly, weekdayTime } from "@/lib/format"
 import { NAV_ITEMS } from "@/lib/nav"
 import { useOverview } from "@/lib/queries"
 
 function pageTitle(pathname: string): string {
-  const match = NAV_ITEMS.find((item) => (item.to === "/" ? pathname === "/" : pathname.startsWith(item.to)))
+  const match = NAV_ITEMS.find((item) => pathname.startsWith(item.to))
   return match?.label ?? ""
 }
 
-function Countdown() {
+/** Time to the deadline and the last sync. Shown in the header of both views. */
+export function Countdown() {
   const { data, isPending, isError } = useOverview()
   if (isPending) return <Skeleton className="h-4 w-48" />
   if (!data) return null
@@ -67,6 +70,26 @@ export function AppLayout() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+/**
+ * The management view has no sidebar: no agents, no queues, no inbox. Only the switch to the buyer view.
+ */
+export function ManagementLayout() {
+  return (
+    <div className="flex min-h-svh flex-col bg-background">
+      <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-3 border-b bg-background/90 px-2 backdrop-blur md:px-4">
+        <ProductMark />
+        <ViewSwitch />
+        <div className="ml-auto hidden min-w-0 pl-4 sm:block">
+          <Countdown />
+        </div>
+      </header>
+      <main className="min-h-0 flex-1">
+        <Outlet />
+      </main>
+    </div>
   )
 }
 
