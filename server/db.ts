@@ -187,7 +187,8 @@ CREATE TABLE IF NOT EXISTS decisions (
   closed_reason TEXT
 );
 
--- Questions the action agent asks a supplier or a colleague. They are collected per recipient and leave as one mail.
+-- Questions the action agent asks a supplier or a colleague, per risk. A question to a supplier is stored as an issue too,
+-- so the data agent's correspondence round puts it into its one mail per supplier. A colleague gets a task.
 CREATE TABLE IF NOT EXISTS questions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   risk_id INTEGER NOT NULL,
@@ -201,6 +202,7 @@ CREATE TABLE IF NOT EXISTS questions (
   status TEXT NOT NULL DEFAULT 'queued', -- queued | sent | answered | no_answer | dropped
   reminder_of INTEGER,               -- the question this one reminds of
   reminded INTEGER NOT NULL DEFAULT 0,
+  issue_id INTEGER,                  -- a question to a supplier is an issue, so it travels in the data agent's one mail per supplier
   message_id INTEGER, answer_message_id INTEGER, task_id INTEGER,
   dedupe_key TEXT NOT NULL,
   created_at TEXT NOT NULL, sent_at TEXT, answered_at TEXT
@@ -256,11 +258,8 @@ for (const [column, decl] of [
   ["timing_basis", "TEXT"], ["expires_at", "TEXT"], ["report", "TEXT NOT NULL DEFAULT '{}'"], ["signatures", "TEXT NOT NULL DEFAULT '[]'"],
   ["stage", "TEXT NOT NULL DEFAULT 'proposed'"], ["auto", "INTEGER NOT NULL DEFAULT 0"], ["check_at", "TEXT"], ["closed_reason", "TEXT"],
 ] as const) addColumn("decisions", column, decl);
-
-// Columns added after the first release. Adding them to an existing database fails harmlessly once they exist.
-for (const sql of ["ALTER TABLE issues ADD COLUMN note TEXT"]) {
-  try { db.exec(sql); } catch { /* already there */ }
-}
+addColumn("questions", "issue_id", "INTEGER");
+addColumn("issues", "note", "TEXT"); // "dismissed: <why>" when someone decided it needs no action
 
 type Param = string | number | bigint | null | Uint8Array;
 const clean = (params: unknown[]): Param[] => params.map((p) => (p === undefined ? null : typeof p === "boolean" ? (p ? 1 : 0) : (p as Param)));
