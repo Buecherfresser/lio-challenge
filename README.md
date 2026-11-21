@@ -33,21 +33,31 @@ Every 3 minutes Lineguard runs these steps in order. "Sync now" in the dashboard
 2. **Base data** (code only). Master data, purchase orders from both exports, goods receipts, stock, shipments and the pack-out log are loaded into tables.
 3. **Data agent**. A reading agent works through every new or changed document and every received mail, one at a time. It looks things up in Soony's data, records facts (code checks each one and tells the agent at once when one does not fit), keeps notes per supplier and part, and writes down questions. Soony's own files come first, then each supplier's files in order, suppliers in parallel. Rules then compare the facts with what Soony expects. Once nothing new is left to read, a correspondence round turns all open issues into one mail per supplier in the supplier's language, one task per role at Soony, or closes them.
 4. **Risk agent**. It connects facts that single rules miss and reports risks. It states what could go wrong, and code works out how many copies that costs.
-5. **Action agent** (a mock for now). It turns each risk into decision cards: the option, copies saved, cost, who approves under policy PP-07, and a mail draft. Nothing leaves the building. Approve and Reject change the status and are logged.
+5. **Action agent**. One agent works through each open risk where something changed since it last looked: a new risk, a supplier's answer, a decision, an overdue answer. It looks for the way out, checks it against the other facts, asks the supplier what is missing, and hands a decision card to the person who has to approve it. After the approval it sends the order and follows up until the supply is confirmed.
 
-The rule behind steps 4 and 5: the model thinks, the code computes. Quantities, copies, costs and approvers always come from code.
+The rule behind steps 4 and 5: the model thinks, the code computes. Quantities, copies, their value, costs, deadlines and approvers always come from code.
+
+## What the action agent may do on its own
+
+The tool it calls decides, not its wording.
+
+- **Asking is free.** A question to a supplier or a colleague leaves without a click. Three rules are enforced in code, because a mail costs the other side attention: questions are collected and leave as one mail per supplier at the end of a pass, the same thing is never asked twice (a question that is out or answered is refused, with the answer), and there is one reminder before the matter goes on inside the company.
+- **Anything that binds the company is a decision card.** An order, an accepted offer, a freight booking, a quality release. The card names who signs under the approval policy, also when two people sign or the role is vacant.
+- **The dial.** On the Approvals page you set an amount below which the agent carries out an order or a freight booking itself and reports it (`AUTONOMY_LIMIT_EUR`, default 0 = never). Quality releases and exceptions always need a person.
+
+An approved decision counts in the numbers at once: its supply shows as uncertain until it is in the building, and its route shows on the map.
 
 ## The dashboard
 
 There are two views. A switch at the top changes between them.
 
-**Management** (`/`, for the head of procurement) shows one number, how many copies are ready by the deadline, split into safe, uncertain and lost. Below it is the map, and one line appears when a decision waits for approval. There is no sidebar, no agent status and no lists.
+**Management** (`/`, for the head of procurement) shows one number, how many copies are ready by the deadline, split into safe, uncertain and lost. Under the number stands what the lost copies cost. Below it is the map, and one line appears when a decision waits for approval. There is no sidebar, no agent status and no lists.
 
 **Buyer** (`/buyer` and every page below) is the workspace:
 
-- **Overview**: the copies per edition, what needs you (decisions, mails, tasks as counts), and the map.
+- **Overview**: the copies per edition, what needs you (decisions, mails, tasks as counts), what the agents are working on and whom they wait for, and the map.
 - **Parts**: every part with its status. A click opens the sources, contradictions, open questions and history.
-- **Approvals**: decision cards with Approve and Reject.
+- **Approvals**: decision cards in the order to take them. Each shows the copies it saves, what they are worth, the cost, the time by which to decide and what an hour of waiting costs, then the report: what the agent looked at, the problem, what is agreed with the supplier, and what happens after approval.
 - **Inbox**: mails and tasks from agents and people, per supplier or person. Supplier mails show the original next to the English version.
 - **Log**: every step of every agent in one sentence, with the model, tokens and cost.
 
@@ -71,7 +81,9 @@ The suppliers in the challenge are played by AI agents that answer real e-mail. 
 
 Lineguard checks the mailbox every two minutes and reads replies like any other source. While `MAIL_MODE=outbox`, which is the default, outgoing mail is written to `data/outbox` as files instead.
 
-Mails wait in the inbox under "Needs approval" until you click Send. Set `AUTO_SEND_CLARIFICATIONS=true` to send them without a click.
+Questions to suppliers go out without a click. Set `AUTO_SEND_CLARIFICATIONS=false` to hold them in the inbox under "Needs approval" until you click Send. Approving a decision card sends its mail (`SEND_ON_APPROVAL=false` holds it in the inbox instead).
+
+What a copy is worth comes from `VALUE_PER_COPY_EUR` (per product id). Without it the cards show copies only.
 
 ## Replay
 
@@ -94,8 +106,8 @@ node server/cli.ts import-folder ../soony-data
 |---|---|
 | `server/sync` | Sync, snapshots, replay |
 | `server/ingest` | Loaders for the base tables |
-| `server/agents` | Data agent, risk agent, action agent |
-| `server/compute` | The tools that count: parts, copies per edition, what-if, supplier reliability, approvals |
+| `server/agents` | Data agent, risk agent, action agent (`action.ts`), its questions (`questions.ts`) and the read tools the agents share (`tools.ts`) |
+| `server/compute` | The tools that count: parts, copies per edition, what-if, supplier reliability, approvals, the value of copies and what waiting costs (`value.ts`) |
 | `server/mail` | Sending, outbox, mailbox polling |
 | `prompts` | The agents' task prompts, free of anything customer specific, and `customer.md` with what the agents know about the customer |
 | `.claude/skills/writing-style` | The writing style. Coding agents use it as a skill, and the app appends it to every agent prompt |

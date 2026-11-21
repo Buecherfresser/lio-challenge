@@ -1,5 +1,206 @@
 [
   {
+    "id": 40,
+    "risk_id": 7,
+    "status": "pending",
+    "stage": "proposed",
+    "title": "Order 8,000 art books from Karton Nowak's stock",
+    "option": "Accept item 2 of Karton Nowak's rush offer of 21 Nov: 8,000 art books from their finished-goods store, loaded within 4 hours of the order.",
+    "rationale": "Karton Nowak is the only supplier of the art book and has the books in stock, so nothing has to be printed. The truck needs about 9 hours to Hamburg.",
+    "copies_saved": 5900,
+    "copies_by_product": [
+      {
+        "product_id": "FG-GH6-CE",
+        "copies": 5900
+      },
+      {
+        "product_id": "FG-GH6-STD",
+        "copies": 0
+      }
+    ],
+    "value_eur": 708000,
+    "cost_eur": 16800,
+    "cost_basis": "Art books: 8,000 x EUR 2.1 (price list of Karton Nowak for CMP-GAM-008) = EUR 16,800.",
+    "net_eur": 691200,
+    "decide_by": "2026-11-21T23:25:00.000Z",
+    "wait_copies_per_hour": 875,
+    "wait_eur_per_hour": 105000,
+    "timing_basis": "Ordered by Sun 22 Nov, 00:25, the supply reaches the line in time for all 5,900 copies. One hour later it saves 5,025.",
+    "recommended": true,
+    "approval_kind": "po_value",
+    "approver": {
+      "role": "Buyer (Print & Packaging)",
+      "person": "Paul Winter",
+      "rule": "PP-07: Buyer approves purchase orders below EUR 50,000 (limit EUR 50,000)",
+      "available": true,
+      "note": null
+    },
+    "signatures": [
+      {
+        "role": "Buyer (Print & Packaging)",
+        "person": "Paul Winter",
+        "stands_in_for": null,
+        "signed_by": null,
+        "signed_at": null
+      }
+    ],
+    "auto": false,
+    "report": {
+      "research": [
+        {
+          "text": "Goods receipt 5000413065 books 80,000 art books. The order line was for 8,000.",
+          "fact_ids": [
+            9001
+          ]
+        },
+        {
+          "text": "The delivery note has 8,000 written on it by hand.",
+          "fact_ids": [
+            9002
+          ]
+        },
+        {
+          "text": "Karton Nowak is the only supplier of this part.",
+          "fact_ids": [
+            9003
+          ]
+        },
+        {
+          "text": "Their rush offer of 21 Nov is valid for 24 hours.",
+          "fact_ids": [
+            9004
+          ]
+        }
+      ],
+      "problem": "There are 19,300 art books for 25,200 Collector's copies that are still to pack. The stock list shows 91,300 because one delivery was booked ten times too high.",
+      "agreed": [
+        {
+          "text": "They delivered 8,000 with delivery note WZ-261116-473.",
+          "fact_ids": [
+            9005
+          ]
+        },
+        {
+          "text": "8,000 more are in their store and are loaded within 4 hours of the order, at the contract price.",
+          "fact_ids": [
+            9004
+          ]
+        },
+        {
+          "text": "The truck from Poznań to Hamburg takes about 9 hours.",
+          "fact_ids": [
+            9004
+          ]
+        }
+      ],
+      "next_steps": [
+        "I send the order to Karton Nowak in Polish.",
+        "I ask Katrin Jansen for a dock slot on Sun 22 Nov.",
+        "I check by 18:45 that the truck is loaded. If it is not, you and Dr. Maren Vogt hear from me within the hour.",
+        "The overview shows the truck and the copies."
+      ],
+      "ruled_out": [
+        {
+          "option": "Printing new art books",
+          "reason": "The hardcover bindery is down from Sat 21 Nov, 14:00 to Mon 23 Nov, 06:00, and a rush job takes 36 hours."
+        }
+      ],
+      "contact": {
+        "with": "Karton Nowak",
+        "sent": 1,
+        "received": 1
+      }
+    },
+    "report_facts": [
+      {
+        "id": 9001,
+        "object_type": "lot",
+        "object_id": "5000413065",
+        "field": "stock_qty",
+        "value": "80000",
+        "unit": "PC",
+        "part_id": "CMP-GAM-008",
+        "source_path": "soony/erp/goods_receipts.csv",
+        "source_version": 1,
+        "observed_at": "2026-11-18",
+        "recorded_at": "2026-11-21T12:27:00Z",
+        "origin": "code",
+        "confidence": 1,
+        "quote": null
+      },
+      {
+        "id": 9002,
+        "object_type": "lot",
+        "object_id": "5000413065",
+        "field": "stock_qty",
+        "value": "8000",
+        "unit": "PC",
+        "part_id": "CMP-GAM-008",
+        "source_path": "soony/scans/20261118_WZ-261116-473.jpg",
+        "source_version": 1,
+        "observed_at": "2026-11-18",
+        "recorded_at": "2026-11-21T13:04:25Z",
+        "origin": "openai",
+        "confidence": 0.86,
+        "quote": "8.000"
+      },
+      {
+        "id": 9003,
+        "object_type": "supplier",
+        "object_id": "SUP-0028",
+        "field": "note",
+        "value": "share 1.0",
+        "unit": null,
+        "part_id": "CMP-GAM-008",
+        "source_path": "suppliers/SUP-0028_Karton_Nowak/components.csv",
+        "source_version": 1,
+        "observed_at": null,
+        "recorded_at": "2026-11-21T12:27:00Z",
+        "origin": "code",
+        "confidence": 1,
+        "quote": null
+      },
+      {
+        "id": 9004,
+        "object_type": "supplier",
+        "object_id": "SUP-0028",
+        "field": "offer",
+        "value": "8,000 art books from stock",
+        "unit": null,
+        "part_id": "CMP-GAM-008",
+        "source_path": "suppliers/SUP-0028_Karton_Nowak/notices/Oferta_tryb_ekspresowy_2026-11-21.pdf",
+        "source_version": 1,
+        "observed_at": "2026-11-21",
+        "recorded_at": "2026-11-21T13:04:40Z",
+        "origin": "openai",
+        "confidence": 0.9,
+        "quote": null
+      },
+      {
+        "id": 9005,
+        "object_type": "lot",
+        "object_id": "5000413065",
+        "field": "stock_qty",
+        "value": "8000",
+        "unit": "PC",
+        "part_id": "CMP-GAM-008",
+        "source_path": "mail:412",
+        "source_version": 1,
+        "observed_at": "2026-11-21",
+        "recorded_at": "2026-11-21T13:28:05Z",
+        "origin": "openai",
+        "confidence": 0.9,
+        "quote": null
+      }
+    ],
+    "mail_draft": null,
+    "created_by": "agent",
+    "created_at": "2026-11-21T13:28:30Z",
+    "decided_at": null,
+    "decided_by": null,
+    "decision_reason": null
+  },
+  {
     "copies_by_product": [
       {
         "product_id": "GH6-STD",
@@ -47,57 +248,20 @@
       "fact_ids": [],
       "tool_calls": [],
       "created_at": "2026-11-21T14:10:00Z"
-    }
-  },
-  {
-    "copies_by_product": [
-      {
-        "product_id": "GH6-STD",
-        "copies": 2500
-      }
-    ],
-    "approver": {
-      "role": "Head of Procurement",
-      "person": "Mara Lindqvist",
-      "rule": "PP-07: up to €25,000",
-      "available": true,
-      "note": null
     },
-    "mail_draft": null,
-    "created_by": "mock",
-    "created_at": "2026-11-21T14:20:00Z",
-    "decided_at": "2026-11-21T15:02:00Z",
-    "decided_by": "Mara Lindqvist",
-    "id": 40,
-    "risk_id": 8,
-    "status": "approved",
-    "title": "Truck 2,500 cards to Hong Kong and fly them",
-    "option": "Release 2,500 cards from the container in Yantian, truck them to Hong Kong airport and fly them to Hamburg.",
-    "rationale": "The strike does not affect Hong Kong airport.",
-    "copies_saved": 2500,
-    "cost_eur": 21800,
-    "cost_basis": "Truck €1,800 plus air freight €8.00/unit",
-    "risk": {
-      "id": 8,
-      "status": "open",
-      "part_id": "P-1001",
-      "product_id": null,
-      "supplier_id": "SUP-0010",
-      "title": "Port strike in Yantian holds 4,000 game cards",
-      "explanation": "The container with 4,000 game cards cannot leave Yantian before 25 Nov.",
-      "probability": 0.8,
-      "copies_at_risk": 4000,
-      "copies_by_product": [
-        {
-          "product_id": "GH6-STD",
-          "copies": 4000
-        }
-      ],
-      "scenario": {},
-      "fact_ids": [],
-      "tool_calls": [],
-      "created_at": "2026-11-21T14:10:00Z"
-    }
+    "stage": "proposed",
+    "value_eur": null,
+    "net_eur": null,
+    "decide_by": null,
+    "wait_copies_per_hour": null,
+    "wait_eur_per_hour": null,
+    "timing_basis": null,
+    "recommended": false,
+    "approval_kind": "other",
+    "signatures": [],
+    "auto": false,
+    "report": null,
+    "decision_reason": null
   },
   {
     "copies_by_product": [
@@ -147,6 +311,19 @@
       "fact_ids": [],
       "tool_calls": [],
       "created_at": "2026-11-21T14:10:00Z"
-    }
+    },
+    "stage": "proposed",
+    "value_eur": null,
+    "net_eur": null,
+    "decide_by": null,
+    "wait_copies_per_hour": null,
+    "wait_eur_per_hour": null,
+    "timing_basis": null,
+    "recommended": false,
+    "approval_kind": "other",
+    "signatures": [],
+    "auto": false,
+    "report": null,
+    "decision_reason": null
   }
 ]

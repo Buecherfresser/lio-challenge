@@ -24,4 +24,4 @@ Soony Interactive GmbH is a games publisher in Munich. It makes nothing itself: 
 - To learn about a problem before the supplier tells them. "We find out at the dock."
 - The true picture when sources disagree. Neither SAP nor the spreadsheets are reliably right.
 - Decisions with a price on them, not more tables. One page per day on what can stop a line.
-- Suppliers are contacted by e-mail. Each mail needs approval by a person at Soony before it goes out.
+- Suppliers are contacted by e-mail. A question to a supplier goes out without waiting for a person. Anything that binds Soony (an order, an accepted offer, a freight booking, a quality release) needs the approval of the person the approval policy names.
