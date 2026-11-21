@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react"
 import { Fragment, type ReactNode } from "react"
 import type { Issue, IssueStatus, IssueType, PartDetail, PartSourceLine } from "@shared/api.ts"
+import { Fold } from "@/components/decision"
 import { FactSources } from "@/components/fact-source"
 import { ObjectLink } from "@/components/object-link"
 import { RiskDetails } from "@/components/risk-details"
@@ -30,13 +31,14 @@ const ISSUE_STATUS_LABEL: Record<IssueStatus, string> = {
   resolved: "Resolved",
 }
 
-const PIPELINE: { key: "ordered" | "confirmed" | "shipped" | "in_transit" | "arrived" | "usable"; label: string }[] = [
-  { key: "ordered", label: "Ordered" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "shipped", label: "Shipped" },
-  { key: "in_transit", label: "In transit" },
-  { key: "arrived", label: "Arrived" },
-  { key: "usable", label: "Usable" },
+// These count every open order of the part, also deliveries promised after the launch, so they can be far above the need.
+const PIPELINE: { key: "ordered" | "confirmed" | "shipped" | "in_transit" | "arrived" | "usable"; label: string; hint: string }[] = [
+  { key: "ordered", label: "Ordered", hint: "Open order quantity, all open orders" },
+  { key: "confirmed", label: "Confirmed", hint: "Confirmed by the supplier" },
+  { key: "shipped", label: "Shipped", hint: "The supplier says it left" },
+  { key: "in_transit", label: "In transit", hint: "On a shipment that has not been received" },
+  { key: "arrived", label: "Arrived", hint: "Received at the distribution center for the open orders" },
+  { key: "usable", label: "Usable", hint: "In stock and not blocked" },
 ]
 
 function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
@@ -50,6 +52,21 @@ function Section({ title, count, children }: { title: string; count?: number; ch
       </h3>
       {children}
     </section>
+  )
+}
+
+/** The documents behind a line, folded: "3 documents" opens the file names, quotes and how sure the reading is. */
+function Evidence({ factIds, part, showValue = false }: { factIds: number[]; part: PartDetail; showValue?: boolean }) {
+  const files = new Set(factIds.map((id) => part.facts.find((fact) => fact.id === id)?.source_path).filter(Boolean))
+  const n = files.size || factIds.length
+  return (
+    <details className="group mt-1 pl-4 text-xs text-muted-foreground">
+      <summary className="cursor-pointer list-none select-none hover:text-foreground [&::-webkit-details-marker]:hidden">
+        <ChevronRight className="mr-0.5 inline size-3 transition-transform group-open:rotate-90" />
+        {n} {n === 1 ? "document" : "documents"}
+      </summary>
+      <FactSources factIds={factIds} facts={part.facts} showValue={showValue} className="mt-1" />
+    </details>
   )
 }
 
@@ -73,7 +90,7 @@ function SourceLine({ line, part }: { line: PartSourceLine; part: PartDetail }) 
           </span>
         )}
       </div>
-      <FactSources factIds={line.fact_ids} facts={part.facts} className="mt-1 pl-4" />
+      {line.fact_ids.length > 0 && <Evidence factIds={line.fact_ids} part={part} />}
     </li>
   )
 }
@@ -115,7 +132,7 @@ function IssueItem({ issue, part }: { issue: Issue; part: PartDetail }) {
       <div className="text-xs text-muted-foreground">
         <ObjectLink object={issue.object} /> · since {dateTime(issue.created_at)}
       </div>
-      <FactSources factIds={issue.fact_ids} facts={part.facts} showValue />
+      {issue.fact_ids.length > 0 && <Evidence factIds={issue.fact_ids} part={part} showValue />}
     </li>
   )
 }
@@ -128,7 +145,7 @@ function Body({ part }: { part: PartDetail }) {
           {PIPELINE.map((step, index) => (
             <Fragment key={step.key}>
               {index > 0 && <ChevronRight className="hidden size-3.5 shrink-0 text-muted-foreground/60 sm:block" />}
-              <div className="min-w-0 flex-1 px-2 text-center">
+              <div className="min-w-0 flex-1 px-2 text-center" title={step.hint}>
                 <div className="truncate text-[11px] text-muted-foreground">{step.label}</div>
                 <div
                   className={cn("text-sm font-semibold tabular-nums", part[step.key] === 0 && "text-muted-foreground")}
@@ -203,32 +220,31 @@ function Body({ part }: { part: PartDetail }) {
         )}
       </Section>
 
-      <Section title="History" count={part.history.length}>
-        {part.history.length === 0 ? (
-          <EmptyState className="min-h-0 py-4">Nothing has happened to this part yet.</EmptyState>
-        ) : (
-          <ol className="divide-y rounded-lg border">
-            {part.history.map((event) => (
-              <li key={event.id} className="px-3 py-2">
-                <div className="text-sm">{event.summary}</div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  {dateTime(event.ts)} · {ACTOR_LABEL[event.actor]}
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
-      </Section>
-
-      <Section title="All facts" count={part.facts.length}>
-        {part.facts.length === 0 ? (
-          <EmptyState className="min-h-0 py-4">No facts recorded for this part.</EmptyState>
-        ) : (
-          <div className="rounded-lg border px-3 py-2.5">
+      <div className="border-b">
+        <Fold title="History" count={part.history.length}>
+          {part.history.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nothing has happened to this part yet.</p>
+          ) : (
+            <ol className="divide-y rounded-lg border">
+              {part.history.map((event) => (
+                <li key={event.id} className="px-3 py-2">
+                  <div className="text-sm">{event.summary}</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {dateTime(event.ts)} · {ACTOR_LABEL[event.actor]}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Fold>
+        <Fold title="Every fact read for this part" count={part.facts.length}>
+          {part.facts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No facts recorded for this part.</p>
+          ) : (
             <FactSources factIds={part.facts.map((fact) => fact.id)} facts={part.facts} showValue className="space-y-1.5" />
-          </div>
-        )}
-      </Section>
+          )}
+        </Fold>
+      </div>
     </div>
   )
 }

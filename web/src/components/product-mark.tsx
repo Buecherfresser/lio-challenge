@@ -1,7 +1,8 @@
 import { PRODUCT_NAME } from "@/lib/config"
+import { cn } from "@/lib/utils"
 
 /** Logo and product name, at the top of both views. */
-export function ProductMark() {
+export function ProductMark({ labelClassName }: { labelClassName?: string }) {
   return (
     <div className="flex h-8 items-center gap-2 px-2">
       <span className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
@@ -9,7 +10,7 @@ export function ProductMark() {
           <path d="M3 4.5h10M3 8h10M3 11.5h6" />
         </svg>
       </span>
-      <span className="text-sm font-semibold tracking-tight">{PRODUCT_NAME}</span>
+      <span className={cn("text-sm font-semibold tracking-tight", labelClassName)}>{PRODUCT_NAME}</span>
     </div>
   )
 }

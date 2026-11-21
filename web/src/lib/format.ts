@@ -163,3 +163,22 @@ export function pretty(value: unknown): string {
     return String(value)
   }
 }
+
+/** "in 51 min", "in 9 h 12 min" or "2 h 5 min overdue", measured against the server clock (or the time being viewed). */
+export function relativeDue(iso: string, now: string): { label: string; ms: number } {
+  const ms = new Date(iso).getTime() - new Date(now).getTime()
+  if (Number.isNaN(ms)) return { label: "n/a", ms: Infinity }
+  return { label: ms >= 0 ? `in ${duration(ms)}` : `${duration(-ms)} overdue`, ms }
+}
+
+/** How pressing a deadline is: under 2 hours it is urgent, under 8 hours soon. */
+export function urgency(ms: number): "urgent" | "soon" | "later" {
+  if (ms < 2 * 3600000) return "urgent"
+  if (ms < 8 * 3600000) return "soon"
+  return "later"
+}
+
+/** 2,133,000 becomes 2.1M, 42,900 becomes 42.9k. For dense rows where the exact number sits one click away. */
+export function compact(value: number): string {
+  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value)
+}

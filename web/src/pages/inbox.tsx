@@ -1,21 +1,18 @@
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Check, Inbox, ListTodo, MailQuestion, Send } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { useSearchParams } from "react-router"
 import type { MailFolder, Message, Task, Thread } from "@shared/api.ts"
+import { DraftEditor } from "@/components/draft-editor"
 import { MessageBody } from "@/components/message-body"
 import { ObjectLink } from "@/components/object-link"
 import { EmptyState, ErrorState } from "@/components/states"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { ACTOR_LABEL, MESSAGE_STATUS_LABEL, dateTime, isTranslated, num } from "@/lib/format"
+import { ACTOR_LABEL, MESSAGE_STATUS_LABEL, dateTime, num } from "@/lib/format"
 import {
-  useDiscardMessage,
   useFolderMessages,
-  useOverview,
-  useSendMessage,
   useTaskDone,
   useTasks,
   useThreadMessages,
@@ -114,7 +111,7 @@ function ListRow({
         )}
       >
         <div className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
+          <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium">{title}</span>
           <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{meta}</span>
         </div>
         <div className="mt-0.5 flex items-center gap-2">
@@ -123,53 +120,6 @@ function ListRow({
         </div>
       </button>
     </li>
-  )
-}
-
-function DraftEditor({ message }: { message: Message }) {
-  const [body, setBody] = useState(message.body_original)
-  const send = useSendMessage()
-  const discard = useDiscardMessage()
-  const { data: overview } = useOverview()
-  const busy = send.isPending || discard.isPending
-  const edited = body !== message.body_original
-
-  return (
-    <div className="space-y-3">
-      <MessageBody
-        message={message}
-        original={
-          <Textarea
-            aria-label="Mail text"
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-            className="min-h-40 bg-background leading-relaxed"
-          />
-        }
-      />
-      {isTranslated(message) && edited && (
-        <p className="text-xs text-muted-foreground">The English text shows the draft before your edits.</p>
-      )}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="decision"
-          disabled={busy || !body.trim()}
-          onClick={() => send.mutate({ id: message.id, body })}
-        >
-          <Send />
-          Send
-        </Button>
-        <Button variant="outline" disabled={busy} onClick={() => discard.mutate(message.id)}>
-          Discard
-        </Button>
-        {(send.isError || discard.isError) && (
-          <span className="text-xs text-muted-foreground">That did not work. Try again.</span>
-        )}
-        {overview?.mode.mail === "outbox" && (
-          <span className="ml-auto text-xs text-muted-foreground">Outbox mode: the mail is stored and not delivered.</span>
-        )}
-      </div>
-    </div>
   )
 }
 
@@ -288,7 +238,6 @@ export function InboxPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const wide = useMediaQuery("(min-width: 1024px)")
 
-  const folder = FOLDERS.find((item) => item.id === searchParams.get("folder")) ?? FOLDERS[0]
   const threadParam = searchParams.get("thread")
   const taskParam = searchParams.get("task")
 
@@ -309,6 +258,11 @@ export function InboxPage() {
     needs_approval: threads.data?.reduce((sum, thread) => sum + thread.needs_approval, 0),
     tasks: tasks.data?.filter((task) => task.status === "open").length,
   }
+
+  // Without a folder in the address, open the one that needs you: mails to approve first, else the inbox.
+  const folder =
+    FOLDERS.find((item) => item.id === searchParams.get("folder")) ??
+    (counts.needs_approval ? FOLDERS.find((item) => item.id === "needs_approval")! : FOLDERS[0])
 
   const isTasks = folder.id === "tasks"
   const current = folder.id === "tasks" ? null : folderMessages[folder.id]
@@ -337,7 +291,7 @@ export function InboxPage() {
               key={item.id}
               type="button"
               aria-current={item.id === folder.id}
-              onClick={() => setSearchParams(item.id === "inbox" ? {} : { folder: item.id })}
+              onClick={() => setSearchParams({ folder: item.id })}
               className={cn(
                 "flex h-8 shrink-0 items-center gap-2 rounded-md px-2 text-sm whitespace-nowrap outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
                 item.id === folder.id && "bg-muted font-medium",
@@ -353,7 +307,7 @@ export function InboxPage() {
 
       <div
         className={cn(
-          "min-h-0 flex-1 overflow-y-auto lg:w-72 lg:flex-none lg:border-r 2xl:w-96",
+          "min-h-0 flex-1 overflow-y-auto lg:w-80 lg:flex-none lg:border-r 2xl:w-[26rem]",
           !wide && detailOpen && "hidden",
         )}
       >
@@ -385,7 +339,7 @@ export function InboxPage() {
                 key={item.thread_id}
                 active={item.thread_id === threadId}
                 onClick={() =>
-                  setSearchParams({ ...(folder.id === "inbox" ? {} : { folder: folder.id }), thread: item.thread_id })
+                  setSearchParams({ folder: folder.id, thread: item.thread_id })
                 }
                 title={item.title}
                 meta={dateTime(item.at)}
@@ -411,7 +365,7 @@ export function InboxPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSearchParams(folder.id === "inbox" ? {} : { folder: folder.id })}
+              onClick={() => setSearchParams({ folder: folder.id })}
             >
               <ArrowLeft />
               Back to {folder.label.toLowerCase()}

@@ -43,7 +43,7 @@ The tool it calls decides, not its wording.
 
 - **Asking is free.** A question to a supplier or a colleague leaves without a click. Three rules are enforced in code, because a mail costs the other side attention: questions are collected and leave as one mail per supplier at the end of a pass, the same thing is never asked twice (a question that is out or answered is refused, with the answer), and there is one reminder before the matter goes on inside the company.
 - **Anything that binds the company is a decision card.** An order, an accepted offer, a freight booking, a quality release. The card names who signs under the approval policy, also when two people sign or the role is vacant.
-- **The dial.** On the Approvals page you set an amount below which the agent carries out an order or a freight booking itself and reports it (`AUTONOMY_LIMIT_EUR`, default 0 = never). Quality releases and exceptions always need a person.
+- **The dial.** On the History page you set an amount below which the agent carries out an order or a freight booking itself and reports it (`AUTONOMY_LIMIT_EUR`, default 0 = never). Quality releases and exceptions always need a person.
 
 An approved decision counts in the numbers at once: its supply shows as uncertain until it is in the building, and its route shows on the map.
 
@@ -53,13 +53,14 @@ There are two views. A switch at the top changes between them.
 
 **Management** (`/`, for the head of procurement) shows one number, how many copies are ready by the deadline, split into safe, uncertain and lost. Under the number stands what the lost copies cost. Below it is the map, and one line appears when a decision waits for approval. There is no sidebar, no agent status and no lists.
 
-**Buyer** (`/buyer` and every page below) is the workspace:
+**Buyer** (`/buyer` and every page below) is the workspace. Its sidebar is a rail of icons that opens over the page on hover; the button in the header pins it open.
 
-- **Overview**: the copies per edition, what needs you (decisions, mails, tasks as counts), what the agents are working on and whom they wait for, and the map.
-- **Parts**: every part with its status. A click opens the sources, contradictions, open questions and history.
-- **Approvals**: decision cards in the order to take them. Each shows the copies it saves, what they are worth, the cost, the time by which to decide and what an hour of waiting costs, then the report: what the agent looked at, the problem, what is agreed with the supplier, and what happens after approval.
-- **Inbox**: mails and tasks from agents and people, per supplier or person. Supplier mails show the original next to the English version.
-- **Log**: every step of every agent in one sentence, with the model, tokens and cost.
+- **Overview**: only what is urgent. The items due in the next 24 hours, one number per edition (a click shows the breakdown and the bottleneck), and one link each to the to-do list, the parts and what the agents handle on their own.
+- **To do**: everything that waits for a person, one line per item, grouped by priority (urgent, important, normal, later) and within a group by deadline. Agents set the priority (`priority` on decisions, mails and tasks). While they have not, a decision due within two hours counts as urgent, any other open decision as important, and mails and tasks as normal. Decisions, mails to release and tasks sit in it side by side, with a filter by kind and by person. A click opens the item in a side panel with its buttons at the top.
+  A decision shows the copies it saves, the cost, the time by which to decide and who signs, then the buttons, then the problem and what happens after approval. What the agent looked at, what is agreed with the supplier, the options it ruled out and how cost and deadline are worked out are folded below.
+- **Supply**: every part with what is needed, what is safe, what may still come and the gap. A switch shows the same parts on the map. A click on a part opens its sources (each with its documents folded), contradictions, open questions and history.
+- **Mail**: every conversation per supplier or person. It opens on the mails that wait for approval. Supplier mails show the original next to the English version.
+- **History**: what the agents are doing right now, the dial for what they may order on their own, then every step of every agent in one sentence, with the model, tokens and cost. Sync now sits in the header of every page.
 
 The map shows only critical supply, which means shipments that carry a part with the status uncertain or lost. Parts that are on track appear in the list next to the map. Ships, planes and trucks sit where they probably are now. That position comes from the last tracked position, or from departure and arrival time along a real shipping lane or flight path. A click on a vehicle shows its arrival, quantity and goods value. When a risk assumes a shipment does not make it, its route is crossed out, and the replacement route from a decision card is drawn in blue: dashed while the decision is pending, solid once it is approved.
 

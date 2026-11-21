@@ -1,19 +1,16 @@
 import { Clock, RefreshCw } from "lucide-react"
 import { Outlet, useLocation } from "react-router"
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar, SyncControls } from "@/components/app-sidebar"
 import { ProductMark } from "@/components/product-mark"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ViewSwitch } from "@/components/view-switch"
 import { duration, timeOnly, weekdayTime } from "@/lib/format"
-import { NAV_ITEMS } from "@/lib/nav"
+import { navItemFor } from "@/lib/nav"
 import { useOverview } from "@/lib/queries"
 
-function pageTitle(pathname: string): string {
-  const match = NAV_ITEMS.find((item) => pathname.startsWith(item.to))
-  return match?.label ?? ""
-}
+const pageTitle = (pathname: string) => navItemFor(pathname)?.label ?? ""
 
 /** Time to the deadline and the last sync. Shown in the header of both views. */
 export function Countdown() {
@@ -54,15 +51,18 @@ export function Countdown() {
 export function AppLayout() {
   const { pathname } = useLocation()
   return (
-    <SidebarProvider>
+    // The sidebar starts as a rail of icons and opens over the page on hover. The button in the header pins it open.
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset className="h-svh min-w-0">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1.5" />
           <Separator orientation="vertical" className="mr-1 data-vertical:h-4 data-vertical:self-center" />
           <h1 className="text-sm font-medium">{pageTitle(pathname)}</h1>
-          <div className="ml-auto min-w-0 pl-4">
+          {/* Room on the right for the time controls: the countdown, the sync and, later, the timeline. */}
+          <div className="ml-auto flex min-w-0 items-center gap-3 pl-4">
             <Countdown />
+            <SyncControls />
           </div>
         </header>
         <div className="min-h-0 flex-1 overflow-auto">

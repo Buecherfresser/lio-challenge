@@ -167,6 +167,12 @@ export interface Signature {
 /** Where an approved decision stands: the mail is out (ordered), the other side delivered (done) or declined (failed). */
 export type DecisionStage = "proposed" | "approved" | "ordered" | "done" | "failed" | "withdrawn";
 
+/**
+ * How soon a person should look at an item: urgent (now), high (today), normal (when there is time), low (later).
+ * Agents set it on decisions, mails and tasks. While it is null the dashboard falls back to its own rule.
+ */
+export type Priority = "urgent" | "high" | "normal" | "low";
+
 export interface DecisionCard {
   id: number;
   risk_id: number;
@@ -186,6 +192,7 @@ export interface DecisionCard {
   wait_eur_per_hour: number | null;
   timing_basis: string | null;// how decide_by was worked out, one sentence
   recommended: boolean;       // the best pending option for its risk by value minus cost
+  priority?: Priority | null; // set by the action agent, see Priority
   approval_kind: string;
   approver: Approver;         // per PP-07
   signatures: Signature[];    // one entry per person who has to sign
@@ -243,6 +250,7 @@ export interface Message {
   thread_id: string;          // "supplier:SUP-0010" or "person:<name>"
   direction: "out" | "in";
   status: MessageStatus;
+  priority?: Priority | null; // set by the agent that wrote it, see Priority
   from_addr: string;
   to_addr: string;
   subject: string;
@@ -273,6 +281,7 @@ export interface Thread {
 export interface Task {
   id: number;
   status: "open" | "done";
+  priority?: Priority | null; // set by the agent that created it, see Priority
   role: string;
   person: string | null;
   title: string;

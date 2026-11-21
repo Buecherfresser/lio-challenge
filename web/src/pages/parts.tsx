@@ -1,33 +1,30 @@
 import { Search } from "lucide-react"
 import { useMemo } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router"
-import type { PartRow, PartStatus } from "@shared/api.ts"
+import type { PartStatus } from "@shared/api.ts"
 import { Page } from "@/components/app-layout"
+import { FilterChip, Segmented } from "@/components/controls"
 import { PartSheet } from "@/components/part-sheet"
-import { Stat, StatRow } from "@/components/stat"
 import { EmptyState, ErrorState } from "@/components/states"
 import { StatusDot } from "@/components/status"
+import { SupplyMapPanel } from "@/components/supply-map"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { num } from "@/lib/format"
-import { useParts } from "@/lib/queries"
+import { compact, num } from "@/lib/format"
+import { useMap, useParts } from "@/lib/queries"
+import { shortEdition } from "@/lib/decisions"
 import { cn } from "@/lib/utils"
 
-const STATUS_ORDER: Record<PartStatus, number> = { lost: 0, uncertain: 1, ok: 2 }
-const ALL = "all"
+// Every part with what is needed, what is safe, what may still come and the gap, in that order.
+// The order pipeline (ordered, confirmed, shipped, ...) is one quiet column here and in full in the part's sheet.
+// The map is the same data drawn on the world, one switch away.
 
-const NUMBER_COLUMNS: { key: keyof PartRow & ("need" | "ordered" | "confirmed" | "shipped" | "in_transit" | "arrived" | "usable"); label: string }[] = [
-  { key: "need", label: "Need" },
-  { key: "ordered", label: "Ordered" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "shipped", label: "Shipped" },
-  { key: "in_transit", label: "In transit" },
-  { key: "arrived", label: "Arrived" },
-  { key: "usable", label: "Usable" },
-]
+const STATUS_ORDER: Record<PartStatus, number> = { lost: 0, uncertain: 1, ok: 2 }
+const STATUS_LABEL: Record<PartStatus, string> = { lost: "Lost", uncertain: "Uncertain", ok: "Covered" }
+const ALL = "all"
 
 function Quantity({ value, className }: { value: number; className?: string }) {
   return (
@@ -37,14 +34,33 @@ function Quantity({ value, className }: { value: number; className?: string }) {
   )
 }
 
+/** Numbers with an explanation on hover, because "ordered" and "arrived" count every open order, not this launch. */
+function Head({ children, hint, className }: { children: string; hint: string; className?: string }) {
+  return (
+    <TableHead className={cn("text-right", className)}>
+      <span
+        title={hint}
+        className="cursor-help underline decoration-dotted decoration-muted-foreground/50 underline-offset-4"
+      >
+        {children}
+      </span>
+    </TableHead>
+  )
+}
+
 export function PartsPage() {
   const { part_id: partId } = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: parts, isPending } = useParts()
+  const map = useMap()
 
   const edition = searchParams.get("edition") ?? ALL
   const search = searchParams.get("q") ?? ""
+  const statusParam = searchParams.get("status")
+  const status: PartStatus | typeof ALL =
+    statusParam === "lost" || statusParam === "uncertain" || statusParam === "ok" ? statusParam : ALL
+  const view = searchParams.get("view") === "map" ? "map" : "table"
   const suffix = searchParams.size > 0 ? `?${searchParams.toString()}` : ""
 
   function setParam(key: string, value: string) {
@@ -65,7 +81,7 @@ export function PartsPage() {
     return [...byId].map(([id, name]) => ({ id, name }))
   }, [parts])
 
-  const rows = useMemo(() => {
+  const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase()
     return (parts ?? [])
       .filter((part) => edition === ALL || part.products.some((product) => product.product_id === edition))
@@ -77,62 +93,66 @@ export function PartsPage() {
             .toLowerCase()
             .includes(needle),
       )
-      .sort(
-        (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || b.gap - a.gap || a.part_id.localeCompare(b.part_id),
-      )
   }, [parts, edition, search])
 
-  const count = (status: PartStatus) => (parts ?? []).filter((part) => part.status === status).length
-  const openIssues = (parts ?? []).reduce((sum, part) => sum + part.open_issues, 0)
+  const rows = filtered
+    .filter((part) => status === ALL || part.status === status)
+    .sort(
+      (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || b.gap - a.gap || a.part_id.localeCompare(b.part_id),
+    )
+  const count = (s: PartStatus | typeof ALL) => filtered.filter((part) => s === ALL || part.status === s).length
+  const openIssues = rows.reduce((sum, part) => sum + part.open_issues, 0)
 
   return (
     <Page>
-      <StatRow>
-        <Stat label="Lost" dot={<StatusDot level="lost" />} value={num(count("lost"))} hint="parts with a gap" loading={isPending} />
-        <Stat
-          label="Uncertain"
-          dot={<StatusDot level="uncertain" />}
-          value={num(count("uncertain"))}
-          hint="parts that depend on something open"
-          loading={isPending}
-        />
-        <Stat label="OK" dot={<StatusDot level="ok" />} value={num(count("ok"))} hint="parts covered" loading={isPending} />
-        <Stat label="Open issues" value={num(openIssues)} hint="across all parts" loading={isPending} />
-      </StatRow>
-
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            aria-label="Search parts"
-            placeholder="Search part, description or supplier"
-            value={search}
-            onChange={(event) => setParam("q", event.target.value)}
-            className="pl-8"
-          />
+        <Segmented
+          label="Table or map"
+          value={view}
+          onChange={(value) => setParam("view", value === "map" ? "map" : ALL)}
+          options={[
+            { value: "table", label: "Table" },
+            { value: "map", label: "Map" },
+          ]}
+        />
+        <div className="mx-1 h-5 w-px bg-border" aria-hidden />
+        {([ALL, "lost", "uncertain", "ok"] as const).map((s) => (
+          <FilterChip key={s} active={status === s} count={count(s)} onClick={() => setParam("status", s)}>
+            {s !== ALL && <StatusDot level={s} className={cn(status === s && s === "ok" && "bg-background")} />}
+            {s === ALL ? "All parts" : STATUS_LABEL[s]}
+          </FilterChip>
+        ))}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-64">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              aria-label="Search parts"
+              placeholder="Search part or supplier"
+              value={search}
+              onChange={(event) => setParam("q", event.target.value)}
+              className="h-8 pl-8"
+            />
+          </div>
+          <Select value={edition} onValueChange={(value) => setParam("edition", value)}>
+            <SelectTrigger aria-label="Edition" className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All editions</SelectItem>
+              {editions.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {shortEdition(item.name)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={edition} onValueChange={(value) => setParam("edition", value)}>
-          <SelectTrigger aria-label="Edition" className="w-52">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All editions</SelectItem>
-            {editions.map((item) => (
-              <SelectItem key={item.id} value={item.id}>
-                {item.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {parts && (
-          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-            {rows.length} of {parts.length} parts
-          </span>
-        )}
       </div>
 
-      {isPending ? (
+      {view === "map" ? (
+        <SupplyMapPanel map={map.data} parts={parts} variant="buyer" loading={map.isPending || isPending} />
+      ) : isPending ? (
         <Card className="space-y-3 p-4 shadow-none">
           {[0, 1, 2, 3, 4, 5].map((row) => (
             <Skeleton key={row} className="h-8 w-full" />
@@ -150,14 +170,19 @@ export function PartsPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="pl-4">Part</TableHead>
-                <TableHead>Used in</TableHead>
-                {NUMBER_COLUMNS.map((column) => (
-                  <TableHead key={column.key} className="text-right">
-                    {column.label}
-                  </TableHead>
-                ))}
-                <TableHead className="text-right">Gap</TableHead>
-                <TableHead className="pr-4 text-right">Open issues</TableHead>
+                <Head hint="Units still to pack for the launch, for every edition that uses the part">Need</Head>
+                <Head hint="In the building and usable, or confirmed to arrive before the last packing hour">Safe</Head>
+                <Head hint="May still arrive or be released in time, but nothing confirms it yet">May still come</Head>
+                <Head hint="Need minus safe minus may still come. What is missing even if everything open works out">
+                  Gap
+                </Head>
+                <Head hint="Contradictions and open questions the agents found for this part">Open issues</Head>
+                <Head
+                  hint="All open orders for this part, also deliveries promised after the launch. The part's sheet shows every step"
+                  className="hidden pr-4 xl:table-cell"
+                >
+                  Open orders
+                </Head>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,36 +202,48 @@ export function PartsPage() {
                     <div className="flex items-center gap-2.5">
                       <StatusDot level={part.status} />
                       <div className="min-w-0">
-                        <div className="max-w-64 truncate font-medium">{part.description}</div>
-                        <div className="font-mono text-[11px] text-muted-foreground">{part.part_id}</div>
+                        <div className="max-w-80 truncate font-medium" title={part.description}>
+                          {part.description}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="font-mono text-[11px]">{part.part_id}</span>
+                          <span aria-hidden>·</span>
+                          <span className="truncate">
+                            {part.products.map((product) => shortEdition(product.name)).join(", ")}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      {part.products.map((product) => (
-                        <span
-                          key={product.product_id}
-                          title={product.name}
-                          className="rounded-full border px-1.5 text-[11px] leading-4.5 whitespace-nowrap text-muted-foreground"
-                        >
-                          {product.name.replace(/\s+Edition$/i, "")}
-                        </span>
-                      ))}
-                    </div>
-                  </TableCell>
-                  {NUMBER_COLUMNS.map((column) => (
-                    <Quantity key={column.key} value={part[column.key]} />
-                  ))}
+                  <Quantity value={part.need} />
+                  <Quantity value={part.available_safe} />
+                  <Quantity value={part.available_uncertain} />
                   <Quantity
                     value={part.gap}
-                    className={cn(part.gap > 0 && "font-semibold", part.gap > 0 && part.status === "lost" && "text-lost")}
+                    className={cn(
+                      part.gap > 0 && "font-semibold",
+                      part.gap > 0 && part.status === "lost" && "text-lost",
+                    )}
                   />
-                  <Quantity value={part.open_issues} className="pr-4" />
+                  <Quantity value={part.open_issues} />
+                  <TableCell className="hidden pr-4 text-right text-xs text-muted-foreground tabular-nums xl:table-cell">
+                    {part.ordered > 0 ? (
+                      <span
+                        title={`Ordered ${num(part.ordered)}, shipped ${num(part.shipped)}, in transit ${num(part.in_transit)}`}
+                      >
+                        {compact(part.ordered)} ordered · {compact(part.in_transit)} in transit
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground/60">none open</span>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <div className="border-t px-4 py-2 text-xs text-muted-foreground tabular-nums">
+            {rows.length} of {parts.length} parts · {num(openIssues)} open issues
+          </div>
         </Card>
       )}
 

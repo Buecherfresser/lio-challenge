@@ -1,6 +1,6 @@
 import { Loader2, RefreshCw, SkipForward } from "lucide-react"
-import { NavLink, useLocation } from "react-router"
-import type { Status } from "@shared/api.ts"
+import { useRef, useState } from "react"
+import { Link, NavLink, useLocation } from "react-router"
 import { Button } from "@/components/ui/button"
 import {
   Sidebar,
@@ -15,127 +15,143 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ProductMark } from "@/components/product-mark"
 import { ViewSwitch } from "@/components/view-switch"
-import { num, usd } from "@/lib/format"
-import { NAV_ITEMS } from "@/lib/nav"
+import { runningAgents } from "@/lib/agents"
+import { num } from "@/lib/format"
+import { NAV_ITEMS, navItemFor } from "@/lib/nav"
 import { useOverview, useReplayNext, useRunAll, useStatus } from "@/lib/queries"
 
-const AGENTS: { key: keyof Status["running"]; label: string }[] = [
-  { key: "sync", label: "Sync" },
-  { key: "data_agent", label: "Data agent" },
-  { key: "risk_agent", label: "Risk agent" },
-  { key: "action_agent", label: "Action agent" },
-]
-
-function StatusBlock() {
-  const { data: status, isPending, isError } = useStatus()
+/** "Sync now" and, in replay, "Next snapshot". Small enough for the header. */
+export function SyncControls() {
+  const { data: status } = useStatus()
   const runAll = useRunAll()
   const replayNext = useReplayNext()
+  const busy = runAll.isPending || runningAgents(status).length > 0
+  const replay = status?.replay
 
-  if (isPending) return <Skeleton className="h-40 w-full" />
-  if (isError && !status) {
-    return <p className="px-1 text-xs text-muted-foreground">We can't reach the server. We try again every 5 seconds.</p>
-  }
-
-  const replay = status.replay
   return (
-    <div className="space-y-3">
-      <dl className="space-y-1 px-1 text-xs">
-        {AGENTS.map((agent) => {
-          const running = status.running[agent.key]
-          return (
-            <div key={agent.key} className="flex items-center justify-between gap-2">
-              <dt className="text-muted-foreground">{agent.label}</dt>
-              <dd className="flex items-center gap-1">
-                {running ? (
-                  <>
-                    <Loader2 className="size-3 animate-spin" />
-                    <span className="font-medium">running</span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">idle</span>
-                )}
-              </dd>
-            </div>
-          )
-        })}
-        <div className="flex items-center justify-between gap-2 border-t pt-1.5">
-          <dt className="text-muted-foreground">Documents waiting</dt>
-          <dd className="font-medium tabular-nums">{num(status.queue.documents_pending)}</dd>
-        </div>
-        {status.queue.documents_failed > 0 && (
-          <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Documents failed</dt>
-            <dd className="font-medium tabular-nums">{num(status.queue.documents_failed)}</dd>
-          </div>
-        )}
-        <div className="flex items-center justify-between gap-2">
-          <dt className="text-muted-foreground">Spend</dt>
-          <dd className="font-medium tabular-nums">{usd(status.spend_usd)}</dd>
-        </div>
-      </dl>
-      <div className="space-y-1.5">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          disabled={runAll.isPending}
-          onClick={() => runAll.mutate(undefined)}
-        >
-          <RefreshCw className={runAll.isPending || status.running.sync ? "animate-spin" : undefined} />
-          Sync now
-        </Button>
-        {replay && (
+    <div className="flex shrink-0 items-center gap-1">
+      {replay && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={replayNext.isPending || replay.position >= replay.total}
+              onClick={() => replayNext.mutate(undefined)}
+            >
+              <SkipForward />
+              <span className="tabular-nums">
+                {replay.position}/{replay.total}
+              </span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Load the next stored snapshot of the portal</TooltipContent>
+        </Tooltip>
+      )}
+      <Tooltip>
+        <TooltipTrigger asChild>
           <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            disabled={replayNext.isPending || replay.position >= replay.total}
-            onClick={() => replayNext.mutate(undefined)}
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Sync now"
+            disabled={runAll.isPending}
+            onClick={() => runAll.mutate(undefined)}
           >
-            <SkipForward />
-            Next snapshot ({replay.position}/{replay.total})
+            <RefreshCw className={busy ? "animate-spin" : undefined} />
           </Button>
-        )}
-        {runAll.data?.started === false && !runAll.isPending && (
-          <p className="px-1 text-xs text-muted-foreground">A run is already going.</p>
-        )}
-        {(runAll.isError || replayNext.isError) && (
-          <p className="px-1 text-xs text-muted-foreground">That did not work. Try again.</p>
-        )}
-      </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          {runAll.data?.started === false && !runAll.isPending
+            ? "A run is already going"
+            : runAll.isError || replayNext.isError
+              ? "That did not work. Try again."
+              : "Sync now and let the agents look at what changed"}
+        </TooltipContent>
+      </Tooltip>
     </div>
   )
 }
 
+/** One quiet line: what the agents are doing. The details live in the history. */
+function AgentActivity() {
+  const { data: status, isError } = useStatus()
+  const running = runningAgents(status)
+  const waiting = status?.queue.documents_pending ?? 0
+  return (
+    <Link
+      to="/log"
+      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+    >
+      {isError && !status ? (
+        <span>We can't reach the server.</span>
+      ) : running.length > 0 ? (
+        <>
+          <Loader2 className="size-3 shrink-0 animate-spin" />
+          <span className={`truncate ${RAIL_HIDDEN}`}>{running.join(", ")} at work</span>
+        </>
+      ) : (
+        <>
+          <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
+          <span className={`truncate ${RAIL_HIDDEN}`}>
+            Agents idle{waiting > 0 ? ` · ${num(waiting)} documents waiting` : ""}
+          </span>
+        </>
+      )}
+    </Link>
+  )
+}
+
+/** Fades text out while the sidebar is a rail of icons, so only the icons show. */
+const RAIL_HIDDEN = "transition-opacity duration-150 group-data-[collapsible=icon]:opacity-0"
+
 export function AppSidebar() {
   const { pathname } = useLocation()
   const { setOpenMobile } = useSidebar()
+  // Hovering or tabbing into the rail opens it at once. Leaving closes it after a short pause, so a mouse that
+  // slips over the edge for a moment does not make it flicker.
+  const [peek, setPeek] = useState(false)
+  const closeTimer = useRef<number | undefined>(undefined)
+  const show = () => {
+    window.clearTimeout(closeTimer.current)
+    setPeek(true)
+  }
+  const hide = () => {
+    window.clearTimeout(closeTimer.current)
+    closeTimer.current = window.setTimeout(() => setPeek(false), 150)
+  }
   const { data: overview } = useOverview()
+  const active = navItemFor(pathname)
 
+  const counts = overview?.counts
   const badges: Record<string, number | undefined> = {
-    "/approvals": overview?.counts.pending_decisions,
-    "/inbox": overview?.counts.needs_approval_mails,
+    ["/todo"]: counts ? counts.pending_decisions + counts.needs_approval_mails + counts.open_tasks : undefined,
   }
 
   return (
-    <Sidebar>
+    <Sidebar
+      collapsible="icon"
+      peek={peek}
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocusCapture={show}
+      onBlurCapture={hide}
+    >
       <SidebarHeader>
-        <ProductMark />
-        <ViewSwitch className="mx-2 mt-1 flex" />
+        <ProductMark labelClassName={RAIL_HIDDEN} />
+        <ViewSwitch className={`mx-2 mt-1 flex ${RAIL_HIDDEN}`} />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               {NAV_ITEMS.map((item) => {
-                const active = pathname.startsWith(item.to)
                 const badge = badges[item.to]
                 return (
                   <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton asChild isActive={active}>
+                    <SidebarMenuButton asChild isActive={item === active}>
                       <NavLink to={item.to} onClick={() => setOpenMobile(false)}>
                         <item.icon />
                         <span>{item.label}</span>
@@ -149,8 +165,8 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-3">
-        <StatusBlock />
+      <SidebarFooter className="p-2">
+        <AgentActivity />
       </SidebarFooter>
     </Sidebar>
   )

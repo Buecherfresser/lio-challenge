@@ -1,13 +1,14 @@
-import { ChevronRight, Cog, FileSearch, RefreshCw, Search, Send, ShieldAlert, User, X } from "lucide-react"
+import { ChevronRight, Cog, Loader2, FileSearch, RefreshCw, Search, Send, ShieldAlert, User, X } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router"
-import type { Actor, EventRow, ObjectType } from "@shared/api.ts"
+import type { Actor, EventRow, ObjectType, Status } from "@shared/api.ts"
 import { Page } from "@/components/app-layout"
 import { FactSources } from "@/components/fact-source"
 import { JsonBlock } from "@/components/json-block"
 import { ObjectLink } from "@/components/object-link"
-import { Stat, StatRow } from "@/components/stat"
+import { AutonomyDial } from "@/components/decision"
+import { AGENTS } from "@/lib/agents"
 import { EmptyState, ErrorState } from "@/components/states"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -84,7 +85,7 @@ function EventDetails({ event }: { event: EventRow }) {
   )
 }
 
-function EventItem({ event }: { event: EventRow }) {
+function EventItem({ event, repeat = 1 }: { event: EventRow; repeat?: number }) {
   const [open, setOpen] = useState(false)
   const tokens = (event.tokens_in ?? 0) + (event.tokens_out ?? 0)
   const usage = [
@@ -119,7 +120,9 @@ function EventItem({ event }: { event: EventRow }) {
         </div>
         <div className="col-start-2 min-w-0 text-sm lg:col-start-auto">
           {event.summary}
-          {event.object && (
+          {repeat > 1 && <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">×{repeat}</span>}
+          {/* The object link repeats the title when the sentence already names it, so it is left out then. */}
+          {event.object && !(event.object.label && event.summary.includes(event.object.label)) && (
             <>
               {" "}
               <ObjectLink object={event.object} className="text-xs whitespace-nowrap text-muted-foreground" />
@@ -134,6 +137,45 @@ function EventItem({ event }: { event: EventRow }) {
       </div>
       {open && <EventDetails event={event} />}
     </li>
+  )
+}
+
+/** What each agent does right now, the document queue and the spend. One line, above the log it explains. */
+function AgentStatus({ status, loading }: { status: Status | undefined; loading: boolean }) {
+  if (loading) return <Skeleton className="h-12 w-full rounded-xl" />
+  if (!status) return <ErrorState what="the agents' status" />
+  const figures = [
+    { label: "Documents read", value: num(status.queue.documents_done) },
+    { label: "waiting", value: num(status.queue.documents_pending) },
+    { label: "failed", value: num(status.queue.documents_failed) },
+    { label: "Spend on model calls", value: usd(status.spend_usd) },
+  ]
+  return (
+    <Card size="sm" className="flex-row flex-wrap items-center gap-x-6 gap-y-2 px-4 shadow-none">
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        {AGENTS.map((agent) => {
+          const running = status.running[agent.key]
+          return (
+            <li key={agent.key} className="flex items-center gap-1.5">
+              {running ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <span aria-hidden className="size-1.5 rounded-full bg-muted-foreground/50" />
+              )}
+              <span className={cn(!running && "text-muted-foreground")}>{agent.label}</span>
+              <span className="text-xs text-muted-foreground">{running ? "running" : "idle"}</span>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-muted-foreground sm:ml-auto">
+        {figures.map((figure) => (
+          <span key={figure.label}>
+            <span className="font-medium text-foreground tabular-nums">{figure.value}</span> {figure.label}
+          </span>
+        ))}
+      </div>
+    </Card>
   )
 }
 
@@ -192,34 +234,23 @@ export function LogPage() {
   const rows = events.data?.pages.flat() ?? []
   const filtered = actors.length > 0 || Boolean(objectType || objectId || q)
 
-  // Group by day so each row only needs the time.
-  const days: { day: string; events: EventRow[] }[] = []
+  // Group by day so each row only needs the time. The same step twice in the same second shows once, with ×2.
+  const days: { day: string; events: { event: EventRow; repeat: number }[] }[] = []
   for (const event of rows) {
     const day = dateOnly(event.ts)
-    if (days.at(-1)?.day === day) days.at(-1)!.events.push(event)
-    else days.push({ day, events: [event] })
+    const group = days.at(-1)?.day === day ? days.at(-1)! : (days.push({ day, events: [] }), days.at(-1)!)
+    const last = group.events.at(-1)
+    if (last && last.event.actor === event.actor && last.event.summary === event.summary && last.event.ts.slice(0, 19) === event.ts.slice(0, 19)) {
+      last.repeat += 1
+    } else {
+      group.events.push({ event, repeat: 1 })
+    }
   }
 
   return (
     <Page>
-      <StatRow>
-        <Stat label="Total spend" value={status ? usd(status.spend_usd) : null} hint="on model calls" loading={statusPending} />
-        <Stat
-          label="Documents read"
-          value={status ? num(status.queue.documents_done) : null}
-          loading={statusPending}
-        />
-        <Stat
-          label="Documents waiting"
-          value={status ? num(status.queue.documents_pending) : null}
-          loading={statusPending}
-        />
-        <Stat
-          label="Documents failed"
-          value={status ? num(status.queue.documents_failed) : null}
-          loading={statusPending}
-        />
-      </StatRow>
+      <AgentStatus status={status} loading={statusPending} />
+      <AutonomyDial />
 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -299,8 +330,8 @@ export function LogPage() {
               <h2 className="mb-1.5 text-xs font-medium text-muted-foreground">{group.day}</h2>
               <Card className="py-0 shadow-none">
                 <ol className="divide-y">
-                  {group.events.map((event) => (
-                    <EventItem key={event.id} event={event} />
+                  {group.events.map(({ event, repeat }) => (
+                    <EventItem key={event.id} event={event} repeat={repeat} />
                   ))}
                 </ol>
               </Card>
