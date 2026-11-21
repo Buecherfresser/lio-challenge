@@ -21,7 +21,7 @@ import type { IssueDb, MessageDb } from "./rows.ts";
 // The reading agent. It works through every new or changed document and every received mail, one at a time,
 // with tools: it looks things up, records facts (code checks each one at once), keeps notes for itself and for
 // people, and writes down questions. Questions are not sent from here. They are collected and go out in one
-// round once everything new has been read (see correspond.ts).
+// round once everything new has been read (see clarify.ts).
 //
 // The customer's own files are read first, in order. Then each supplier's files are read in order, suppliers in parallel,
 // so that notes about a supplier are there when the next file of that supplier is read.

@@ -1,4 +1,4 @@
-# Correspondence
+# Clarification
 
 All new sources of this update are read. Below are the issues that are still open. Each of them ends in exactly one of these:
 

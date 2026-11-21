@@ -27,7 +27,7 @@ if (cmd === "import-folder") {
   const { runDataAgent } = await import("./agents/data/index.ts");
   const limit = flags.find((f) => f.startsWith("--limit="))?.split("=")[1];
   const perLane = flags.find((f) => f.startsWith("--per-lane="))?.split("=")[1];
-  console.log(await runDataAgent({ limit: limit !== undefined ? Number(limit) : undefined, perLane: perLane !== undefined ? Number(perLane) : undefined, correspond: flags.includes("--correspond"), mailsOnly: flags.includes("--mails") }));
+  console.log(await runDataAgent({ limit: limit !== undefined ? Number(limit) : undefined, perLane: perLane !== undefined ? Number(perLane) : undefined, clarify: flags.includes("--clarify"), mailsOnly: flags.includes("--mails") }));
 } else if (cmd === "inbound") {
   // node server/cli.ts inbound <supplier id> <subject> <file with the body> : store a received mail, as if it came in by IMAP
   const { recordInbound } = await import("./mail/inbox.ts");
@@ -63,5 +63,5 @@ if (cmd === "import-folder") {
   const { runActionAgent } = await import("./agents/action.ts");
   console.log(await runActionAgent({ force: flags.includes("--force") }));
 } else {
-  console.log("Commands: import-folder <dir> [time] [--apply], sync, snapshots, risk-agent [--force], action-agent [--force], data-agent [--limit=N] [--per-lane=N] [--correspond] [--mails], inbound <supplier> <subject> <body file>, rules [--dry], issues, retry-failed, bootstrap-export <file>, bootstrap-import <file>");
+  console.log("Commands: import-folder <dir> [time] [--apply], sync, snapshots, risk-agent [--force], action-agent [--force], data-agent [--limit=N] [--per-lane=N] [--clarify] [--mails], inbound <supplier> <subject> <body file>, rules [--dry], issues, retry-failed, bootstrap-export <file>, bootstrap-import <file>");
 }

@@ -10,16 +10,16 @@ import { assigneeFor, loadApprovalRules, loadRoles, replyBy } from "./people.ts"
 import { sayDate } from "./rows.ts";
 import type { IssueDb, MessageDb } from "./rows.ts";
 
-// The second half of the data agent. It runs once all new sources of an update are read.
+// The clarification round, the second half of the data agent. It runs once all new sources of an update are read.
 // It takes every open issue (from the rules and from the reading agent's questions) and decides in one round:
 // one mail per supplier, one task per role at Soony, or no action. Code looks up people, languages and addresses.
 
-export interface CorrespondResult { issues: number; mails: number; tasks: number; dismissed: number; left_open: number; sent: number }
+export interface ClarifyResult { issues: number; mails: number; tasks: number; dismissed: number; left_open: number; sent: number }
 
 const ints = { type: "array", items: { type: "integer" } };
 
-export async function correspond(opts: { runId: string }): Promise<CorrespondResult> {
-  const res: CorrespondResult = { issues: 0, mails: 0, tasks: 0, dismissed: 0, left_open: 0, sent: 0 };
+export async function clarify(opts: { runId: string }): Promise<ClarifyResult> {
+  const res: ClarifyResult = { issues: 0, mails: 0, tasks: 0, dismissed: 0, left_open: 0, sent: 0 };
   const open = all<IssueDb>("SELECT * FROM issues WHERE status = 'open' ORDER BY id");
   res.issues = open.length;
   if (!open.length) return res;
@@ -36,9 +36,11 @@ export async function correspond(opts: { runId: string }): Promise<CorrespondRes
   const year = now().getUTCFullYear();
   const by = replyBy();
   const stamp = nowIso();
+  // Checked at the moment of the tool call: rules may have closed an issue while this round was running.
+  const stillOpen = (id: number) => get<{ status: string }>("SELECT status FROM issues WHERE id = ?", id)?.status === "open";
   const take = (ids: number[]) => {
-    const ok = [...new Set(ids)].filter((id) => openIds.has(id) && !handled.has(id));
-    const bad = ids.filter((id) => !openIds.has(id));
+    const ok = [...new Set(ids)].filter((id) => openIds.has(id) && !handled.has(id) && stillOpen(id));
+    const bad = ids.filter((id) => !ok.includes(id));
     return { ok, bad };
   };
 
@@ -76,7 +78,7 @@ export async function correspond(opts: { runId: string }): Promise<CorrespondRes
       },
     },
     {
-      name: "create_task", description: `A task for one role at ${config.customer.name}, covering one or more issues. A second call for the same role adds to the same task.`,
+      name: "create_task", description: `A task for one role at ${config.customer.name}, covering one or more issues. A second call for the same role in this round adds to the same task.`,
       parameters: obj({ role: str("role title as on the organisation chart"), title: str(), body: str(), issue_ids: ints }),
       run: (a: { role: string; title: string; body: string; issue_ids: number[] }) => {
         const { ok, bad } = take(a.issue_ids ?? []);
@@ -135,12 +137,12 @@ export async function correspond(opts: { runId: string }): Promise<CorrespondRes
     })), null, 1)}`,
   ].filter(Boolean).join("\n\n");
 
-  const r = await runAgent({ model: config.openai.modelAgent, system: withStyle(prompt("correspond.md")), user, tools, maxSteps: Number(process.env.CORRESPOND_MAX_STEPS ?? 30) });
+  const r = await runAgent({ model: config.openai.modelAgent, system: withStyle(prompt("clarification.md")), user, tools, maxSteps: Number(process.env.CLARIFY_MAX_STEPS ?? 30) });
 
   res.mails = mails.size; res.tasks = tasks.size;
   res.dismissed = all<{ id: number }>(`SELECT id FROM issues WHERE id IN (${[...handled].map(() => "?").join(",") || "NULL"}) AND status = 'resolved'`, ...handled).length;
   res.left_open = open.length - handled.size;
-  logEvent({ actor: "data_agent", action: "correspondence.done", run_id: opts.runId,
+  logEvent({ actor: "data_agent", action: "clarification.done", run_id: opts.runId,
     summary: `I went through ${open.length} open issues and wrote ${res.mails} ${res.mails === 1 ? "mail" : "mails"} and ${res.tasks} ${res.tasks === 1 ? "task" : "tasks"}${res.dismissed ? `, closed ${res.dismissed} that need no action` : ""}${res.left_open ? `, and left ${res.left_open} open` : ""}.`,
     input: { issue_ids: open.map((i) => i.id), answer_by: by }, output: { mails: Object.fromEntries(mails), tasks: Object.fromEntries(tasks), left_open: open.filter((i) => !handled.has(i.id)).map((i) => i.id), closing_words: r.text, steps: r.steps },
     model: r.usage.model, tokens_in: r.usage.tokens_in, tokens_out: r.usage.tokens_out, cost_usd: r.usage.cost_usd });

@@ -9,7 +9,7 @@ import type { Tool } from "../../llm.ts";
 import { VOCAB } from "../../vocab.ts";
 import type { IssueDb } from "./rows.ts";
 
-// Tools the reading agent and the correspondence agent share: look things up in Soony's data,
+// Tools the reading agent and the clarification round share: look things up in Soony's data,
 // search what is already known, and keep notes. Read-only except for notes.
 
 const KINDS = ["any", "part", "product", "supplier", "order_line", "shipment", "lot", "role", "policy"] as const;
