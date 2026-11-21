@@ -22,6 +22,7 @@ import { logger, readTools } from "./tools.ts";
 import { TOPICS, askQuestion, contactCounts, flushQuestions, questionSignature, questionsForAgent, refreshQuestions, threadForAgent, waitingOn } from "./questions.ts";
 import type { AskInput } from "./questions.ts";
 import { assigneeFor, loadRoles } from "./data/people.ts";
+import { notifyNextSigner } from "../mail/notify.ts";
 
 // The action agent. One agent works through one risk: it finds the way out, asks what is missing, lets the code check
 // whether it pays, and hands a decision with a short report to the right person. Then it follows through.
@@ -233,6 +234,8 @@ export async function storeProposal(risk: Risk, p: Proposal, runId: string): Pro
     await decide(id, "approved", "action_agent", `The cost of EUR ${fmtQty(cost.cost_eur)} is below the limit of EUR ${fmtQty(limit)} up to which I may act on my own.`, { auto: true });
     alone = true;
   }
+  // Whoever has to sign hears about it by mail, unless the agent carried it out on its own.
+  if (!alone) await notifyNextSigner(id);
   return { accepted: true, decision_id: id, copies_saved: sim.copies_saved, value_eur: value, cost_eur: cost.cost_eur, decide_by: timing.decide_by, approver: who, carried_out_without_approval: alone };
 }
 
@@ -298,6 +301,7 @@ export async function decide(id: number, verdict: "approved" | "rejected", by: s
     run("UPDATE decisions SET signatures = ? WHERE id = ?", JSON.stringify(sigs), id);
     const signed = sigs.filter((s) => s.signed_by).map((s) => s.signed_by).join(" and ");
     logEvent({ actor, action: "decision.signed", object, summary: `${signed} signed "${before.title}". It still needs ${left.map((s) => s.person ?? s.role).join(" and ")}.`, input: { by }, output: { signatures: sigs } });
+    await notifyNextSigner(id);
     return decisionById(id);
   }
 

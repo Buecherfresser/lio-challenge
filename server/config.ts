@@ -96,6 +96,13 @@ export const config = {
     autoSendClarifications: bool("AUTO_SEND_CLARIFICATIONS", true),
     sendOnApproval: bool("SEND_ON_APPROVAL", true),
   },
+
+  // Approval notices: a short mail to whoever signs a decision next. For the hackathon all of them go to one address.
+  notify: {
+    to: env("NOTIFY_EMAIL"),
+    // Where the link in a notice points.
+    appUrl: env("APP_URL", "http://localhost:8787"),
+  },
 };
 
 fs.mkdirSync(config.archiveDir, { recursive: true });
