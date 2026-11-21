@@ -1,0 +1,1124 @@
+[Georg]
+[Hintergrundrauschen] Okay, jetzt kann ich. Uhu. 
+
+[Georg]
+By the way, wir haben von allen Teilnehmern die Einverständnis, dass transkribiert werden darf. 
+
+[Jonas]
+Haben wir? 
+
+[Georg]
+Ja, von unseren zwei. Wir beide jetzt hier. Nur für den Agenten, damit er- 
+
+[Jonas]
+Ach so. [lacht] Von den Teilnehmern an dem Gespräch. 
+
+[Georg]
+Ja, ja. 
+
+[Jonas]
+Ja, ich gebe auch meine Einverständnis. 
+
+[Georg]
+Sehr gut, sehr gut. 
+
+[Jonas]
+Ähm, genau, sozusagen, 
+
+[Jonas]
+also genau, der Aktionsschritt ist, wir müssen Daten, ähm, strukturieren. 
+
+[Georg]
+Mhm. 
+
+[Jonas]
+Und in der API sind anscheinend auch Hashes für alle Daten. 
+
+[Georg]
+Ja, genau, ja. 
+
+[Jonas]
+Erkennt man deterministisch, was sich geändert hat. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Und wenn irgendwas von unserer Erwartung abweicht, dann wollen wir das, ähm, wollen wir zu dem nächsten Zustand gehen, sozusagen Lösungen finden und Benachrichtigungen versenden. 
+
+[Georg]
+Ja, Erwartung. Ach so, von, okay, okay. 
+
+[Jonas]
+Von dem, was wir erwarten eigentlich, was wir wollen im Good Case. Und es kann zum Beispiel sein, dass sich die Estimated Time of Arrival ändert oder zu lange nicht ändert, wieder ein, ähm, wie es Suspicious werden. Oder dass der Menge, Menge oder Preis sich ändert in irgendeinem Dokument. 
+
+[Jonas]
+Ähm, 
+
+[Jonas]
+oder wir herausfinden, dass es irgendeine Diskrepanz gibt zwischen Werten aus unterschiedlichen Quellen, zum Beispiel Lieferbescheinigungen und SAP-System. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Und das Eintreten von irgendwelchen Events, also irgendwie Streik bei irgendeinem Hafen, wo eigentlich unser Ding gerade verladen wird, dann ist ja auch, dann muss man sich melden. 
+
+[Georg]
+Okay, okay, okay. 
+
+[Jonas]
+Und, ähm, das Ganze auch jeweils mit, mit Frühwarnung, wenn wir irgend so was finden. Ähm, der Zulieferer von dem Zulieferer, da gibt es Probleme. Wenn wir so eine Information erfahren, dann sollten wir schon immer Frühwarnung geben, auch an unser, sozusagen, auch wenn wir es noch nicht sicher wissen, dass es, ähm, zu einem Problem kommt, aber wenn es eine Wahrscheinlichkeit gibt. 
+
+[Georg]
+Ja, okay, okay, aber das ist schon ganz, schon sehr viel ist es jetzt auf einmal gewesen. 
+
+[Jonas]
+Ja, ist ein bisschen viel, das stimmt. Ähm... 
+
+[Georg]
+Also ich hätte- 
+
+[Jonas]
+Genau, aber das waren jetzt alles sozusagen, was möglich wäre, aber man muss nicht alles machen. Man kann sich ja auch begrenzen. 
+
+[Georg]
+Also ich, ja, du hast es hier ja schön aufgezeigt. Ähm, 
+
+[Georg]
+das sind ja recht unsere Informationsquellen, die sich ändern. Also es gibt ja noch eine dritte Informationsquelle, das ist quasi so Kontext, ähm, einfach wer für irgendwas verantwortlich ist, zu wem man sich irgendwie, an wen man sich meldet, wer für... Ja, genau. Zum Beispiel, also wir kriegen jetzt zum Beispiel Daten vom Sony-Portal. Ich habe mir die auch angeschaut. Das ist, ähm, 
+
+[Georg]
+das ist ja, das ist recht klar strukturiert. Also es gibt pro Product Line oder pro, ähm, zum Beispiel für die Chips gibt es irgendwie zwölf Dateien oder so. Ähm, 
+
+[Georg]
+und die haben alle 
+
+[Georg]
+klare Informationen. Und dann muss halt, es muss halt, wie du gesagt hast, strukturiert werden und geschaut werden, ob es da irgendwelche Diskrepanzen gibt oder irgendwelche Ambiguitäten und das muss nachgefragt werden bei irgendwelchen Lieferanten. Also wir brauchen für dieses, für dieses Einlesen und Übersetzen der, der Dateien, wir wissen ja schon, dass da 
+
+[Georg]
+Ambiguitäten sind und so. 
+
+[Jonas]
+Oh. 
+
+[Georg]
+Da, da hätte man schon direkt- 
+
+[Jonas]
+Ich habe die Abstraktionsebene anders gezogen, aber vielleicht ergibt deine mehr Sinn. Eigentlich habe ich es mir mehr so vorgestellt, wir strukturieren erst mal alles, was wir haben. 
+
+[Georg]
+Ja, ja. 
+
+[Jonas]
+Und wo wir wissen, dass was wahr ist, das ist einfach sozusagen abgelegt und alles andere, äh, legen wir auch ab, aber mit einer Unsicherheit. Und dann, ähm- 
+
+[Georg]
+Ja, ja, klar, klar. 
+
+[Georg]
+Aber dann muss man, das muss man ja klären. Das kann man also... Natürlich gibt es eine Unsicherheit, aber wenn man es klären kann, dann sollte man ja nachfragen, oder? Wir haben ja die Lieferanten als, als... Man kann die anschreiben. 
+
+[Jonas]
+Ja, ja, genau. Ich meinte nur, hm, also weil er hat es ja hier mehr so als, als einen Fluss gemacht, mit der Idee, dass man dann hier, wenn es irgendwie so ein Risiko gibt oder so, wenn wir was sehen, wenn da Daten Diskrepanz, dass man nur dann nachfragen muss. Und dann gibt es unterschiedliche Aktionen, die man machen kann. Entweder nachhaken als, als Mail oder direkt auch schon Plan B anfragen, weißt du, bei anderen Lieferanten fragen. 
+
+[Georg]
+Ja, ja, genau. 
+
+[Jonas]
+Ein Angebot einholen oder eskalieren und an die, ähm, Firma melden. 
+
+[Jonas]
+Also an, ähm, an Sony melden. 
+
+[Jonas]
+So hat er es gedacht. Aber vielleicht würde das sogar Sinn ergeben, dass wir immer Daten direkt nachtragen, wenn... 
+
+[Georg]
+Also... 
+
+[Jonas]
+Dass wir sozusagen einen Klärungsagenten haben, der noch nichts eskaliert oder so, sondern erst mal nur, nur Informationen. Ja, das ergibt eigentlich Sinn. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Und aber der muss dann, der muss sammeln, alles, alles an Diskrepanzen und dann jeweils eine Mail pro, ähm, ich meine, eine Mail alles nachtragen. Die haben ja auch gemeint, sie haben so einen Spam-Schutz. 
+
+[Georg]
+Ja, ja, Spam-Schutz. 
+
+[Jonas]
+Ja. Also nicht, nicht eine Mail pro Anfrage, pro Nachtrag, sondern 
+
+[Jonas]
+für alle Nachtragen eine Mail pro, ähm, Unternehmen. 
+
+[Georg]
+Und, 
+
+[Georg]
+also ich hätte das als getrennte, 
+
+[Georg]
+ähm, also das ist ja sehr wasserfallmäßig hier. 
+
+[Jonas]
+Ja. 
+
+[Georg]
+Also ich hätte einmal den Datenbestand, dann gibt es da irgendwie eine View auf den Datenbestand für quasi Menschen, also auch für die Leute, die es interessiert, für die KPIs und wo Daten sind, wo Engpässe sind und so weiter. Und dann gibt es quasi das, okay, hey, wir haben, wir haben einen Engpass oder wir haben irgendwie, 
+
+[Georg]
+ähm, echte Probleme und dann ist es das halt mit Plan B und eskalieren. Also, okay, ich frage schon mal bei Lieferanten an. 
+
+[Jonas]
+Ja, und nachhaken auch. Also- 
+
+[Georg]
+Ja, ja, ja. 
+
+[Jonas]
+Ja. Dann ist clean, weil dann haben wir hier einfach nur die Klärung der Informationen, weil Social sagen, habt ihr euch dafür tippt sozusagen. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Und dann das andere ist nachhaken im Sinne von: „Hey, könnt ihr da irgendwas machen? Ähm, sonst verpassen wir unseren Deadline oder irgend so was." 
+
+[Georg]
+Ja, ja, genau, genau, ja.
+
+[Jonas]
+Es kann ja auch an-- es geht ja theoretisch eigentlich auch an unterschiedliche Empfänger innerhalb von der Firma, weißt du? Wenn man sagt, da sind da jetzt Fehler in der Daten, dann meldet man sich eher bei der IT oder bei einem Sachbearbeiter. Und Nachhaken, das ist ja dann 
+
+[Jonas]
+sozusagen der Ansprechpartner von, von Suny, der dann höher dann liegt, weißt du? 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Und das wäre auch schon so- 
+
+[Georg]
+So, das wäre ja eigentlich, also diese, diese, ähm... 
+
+[Georg]
+Das Ding ist, das wird halt jeder machen, genau das, was wir jetzt vorhaben zu tun. Diese, diese-- also das ist wie unsere Tech-Bot-Challenge, wo sagt, okay, hey, es ist ganz klar, 
+
+[Georg]
+wir müssen irgendwie die Daten aufräumen, wir brauchen einen Datenbestand, der immer stimmt, wir brauchen irgendwie ein View auf den Datenbestand und wir brauchen, falls irgendwas nicht so läuft, wie wir es erwarten, also wir brauchen auch irgendwie Erwartungspunkte, dann, äh, sollen unsere Agenten so oder so oder so handeln. Und dann brauchen wir vielleicht noch... 
+
+[Jonas]
+Ja, und man kann sich aber auch differenzieren, wahrscheinlich auch bisschen wie in der Tech-Bot-Challenge, bis zu Zusatzfeatures, ähm, und da können wir uns überlegen, was, was sinnvoll ist. 
+
+[Georg]
+Also das muss ja 
+
+[Georg]
+einfach nur gut pitchable sein. Also wir können auch einfach so Zusatzfeature wie, ähm, Confidence oder Prediction, classic, also sowas sagen: „Hey, wir haben hier unser gefinetunede Jeff-Model, keine Ahnung, wo wir sagen: „Hey, wir haben hier für diese und diese Supplier diese Confidence und wir haben hier unseren Wetterbericht als quasi externe Quelle quasi, 
+
+[Georg]
+wo wir Sachen berechnen. 
+
+[Jonas]
+Oder im ersten Schritt müsste es gar nicht so kompliziert sein, aber wenn wir historische Lieferungen haben, dann könnte man schon mal sagen, weißt du, 
+
+[Jonas]
+es waren, es wurden nur bei dem Lieferanten wurden nur zwanzig Prozent der historischen Bestellungen pünktlich zugestellt oder so was. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Ja. Aber das ist eine Idee, genau. Das wird das für mich, ähm, das Frühwarnsystem. Dass man Frühwarnsystem, 
+
+[Jonas]
+also fällt für mich alles, wo man nicht, sich nicht hundertprozentig sicher ist, ähm, 
+
+[Jonas]
+dass es wirklich zu einem Problem 
+
+[Jonas]
+wird. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Genau, das ist ja ein Zusatzfeature, Frühwarnsystem. Und aber, was wir noch gar nicht besprochen haben, ist hier der, ähm, 
+
+[Jonas]
+der Aktionsagent. Also wir haben ja den Nachfrageagent, aber hier der, das hier in Rot, das soll handeln sein, das soll dieser Aktionsagent sein und ich glaube, der ist ja noch Teil von der, von der Core Challenge. 
+
+[Georg]
+Ja, klar. Also da, ich stelle mir das eigentlich recht spezifisch vor. Ähm, 
+
+[Georg]
+also was das Ziel ist aus meinen Augen, ist, dass er vorbereitet alles. Also er sagt, okay, er holt alle Informationen, ähm, sagt: „Okay, das ist die beste Entscheidung, die wir hier machen können." Und dann geht er zur richtigen Person und sagt: „So, das kostet uns, das ist, ähm, 
+
+[Georg]
+das ist die Entscheidung oder das ist das Problem, ähm, oder so können wir optimieren. So viel Geld spart es uns oder 
+
+[Georg]
+kostet es uns und ich würde das jetzt hier so machen." Genau. Und dann die Bestätigung von allen Teilnehmern. Also es ist- 
+
+[Jonas]
+Also erst die gründliche Informationsbeschaffung und Recherche. 
+
+[Georg]
+Das darfst du dem Agenten nie sagen, weil sonst spammt er alle Leute dieses andere zu, aber ja. [lacht] 
+
+[Jonas]
+Nee, okay, ohne Anfragen, sondern sozusagen so read-only Informationsbeschaffung. 
+
+[Georg]
+Na ja, aber man muss ja für Alternativrouten oder so muss man Leute anschreiben. 
+
+[Jonas]
+Ja, okay, aber ich meinte, für mich wäre erst... 
+
+[Jonas]
+Oh. 
+
+[Jonas]
+Okay, da muss man noch mal, ich glaube, da muss man noch mal ein bisschen, bisschen da hingehen, weil es sind ja unterschiedliche Aufgaben, weißt du? Einmal könnte es sein, dass er, 
+
+[Jonas]
+dass er sozusagen Warnungen abgibt ans Personal von Suny. 
+
+[Jonas]
+Und das andere ist dann, und da könnte er auch Vorschläge machen, was er als Nächstes tut. 
+
+[Georg]
+Aus meinen Augen, äh... 
+
+[Georg]
+Also wir haben ja, 
+
+[Georg]
+wenn wir irgendwie Probleme... 
+
+[Georg]
+Ja. Ja, es ist schwierig zu sagen, okay, hey, wir haben hier eine Warnung und wir sagen, das wird zu fünfzig Prozent nicht pünktlich geliefert. Ähm, sollen wir uns irgendwie für Alternativen, ähm, 
+
+[Georg]
+quasi umschauen und dann entscheiden? 
+
+[Georg]
+Das ist ja mehrere Schritte, oder? 
+
+[Jonas]
+Also würdest du sozusagen alle drei, alle drei Sachen, die er hier unterteilt hat, ähm, nachhaken, also zusätzliche Informationsbeschaffung per Mail, dann das Plan B planen und schon mal nachfragen und das eskalieren. Würdest du das alles unter einen Agenten fassen? 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Ja, das ist wahrscheinlich schon sinnvoll. 
+
+[Jonas]
+Ja, ich habe nur überlegt, äh, mal ein bisschen der Ansatz, den Leo ja fährt selber. Ähm, die haben ja so ganz viele unterschiedliche Agenten für die unterschiedlichen Aufgabenbereiche. Deswegen habe ich überlegt, dass es vielleicht, dass sie es wahrscheinlich ganz gut finden, wenn man so Agenten-Spezialisten macht. Aber ich weiß, das ist nicht so unsere Richtung. [lacht] 
+
+[Georg]
+[lacht] Ja, das stimmt. Ich glaube aber, also... 
+
+[Georg]
+Diese Spezialisten ist ja immer nur, für mich ist es einfach immer nur das andere Kontext bereitstellen. Also die Agenten inhärent sind ja nicht anders. Die Intelligenz. 
+
+[Jonas]
+Ja, haben wir immer unterschiedliche System-Prompts. 
+
+[Georg]
+Ja.
+
+[Jonas]
+Okay, und dann müssen wir dann den Flow von dem Agenten müssen wir noch, müssen wir noch planen. Weißt du, bisschen wie in der TechWorld Challenge, so welche Schritte er macht und dann der Human Oversight Player. 
+
+[Georg]
+Jetzt braucht halt immer so, ja, der Flow... Na ja, ich würd, Loki, ich würd gern-- 
+
+[Georg]
+Mein Ziel wäre, so womit ich auch pitchen würde, ist, äh, 
+
+[Georg]
+wir wollen, 
+
+[Georg]
+wir wollen 
+
+[Georg]
+so wenig Human Oversight wie möglich [lacht] und so wenig Human in the Loop. 
+
+[Jonas]
+Ich glaub, das kommt nicht so gut. Immer wenn du, ähm, Anfragen stellst an andere Firmen, der muss, das muss bestätigt werden von der eigenen Firma. Niemand will einen Agenten, weißt du, der automatisch andere, andere Menschen anschreibt und da jede Zeit bei anspricht, oder? 
+
+[Georg]
+Ich sehe, aber... 
+
+[Jonas]
+Also es könnte jemand bei Lio fragen, was die da für eine, für eine Meinung dazu haben. Aber weil, also in echt würde man das ja nie machen, weißt du? Niemand lässt, schreibt dann irgendwie irgendjemand an. Niemand lässt einen Agenten ohne Oversight irgendwie die Geschäftsführung direkt anschreiben von einer anderen Firma, weißt du? [lacht] 
+
+[Georg]
+Doch, ja, ich glaub, du hast schon recht. 
+
+[Jonas]
+Aber ich glaub, man kann, ähm, das ist vielleicht auch ganz gut, das müssen wir noch rausfinden, 
+
+[Jonas]
+wen der Agent automatisch anschreiben darf und ja, so das. 
+
+[Jonas]
+Und was er halt automatisch tun darf. 
+
+[Jonas]
+Mein Ziel wäre auch, Oversight zu minimieren, aber halt nur da, wo man's wirklich machen kann. 
+
+[Georg]
+Ja, wo wir auch noch unbedingt drüber sprechen müssen, zwei Dinge, ist einmal 
+
+[Georg]
+die, das, was die Leute sehen, womit sie arbeiten, weil das ist ja eigentlich fast das Wichtigste. [lacht] 
+
+[Jonas]
+Ja. 
+
+[Georg]
+Ähm, und was wir um achtzehn Uhr die Dame fragen, 
+
+[Georg]
+ob sie das weiß, wie das ist. 
+
+[Jonas]
+Ähm, ja, was die Leute sehen. Das Ding ist, die Leute interessieren unterschiedliche Sachen, hat mir Claude gesagt. [lacht] 
+
+[Georg]
+Ja, genau. 
+
+[Jonas]
+Der Einkäufer, den interessieren, der will viel mehr Details sehen als die Head of Procurement. 
+
+[Jonas]
+Ähm, ich glaub, Claude hat vorgeschlagen, 
+
+[Jonas]
+der 
+
+[Jonas]
+erst mal eine Übersicht 
+
+[Jonas]
+ohne viele Zahlen, irgendwie nur eine Zahl, irgendwie Stand jetzt, wie viel kann geliefert werden, Sonntag zwanzig Uhr. Ja, ich bin mir... 
+
+[Jonas]
+Vielleicht, das könnte man ganz cool machen, wenn man irgendwie eine so 'ne, 
+
+[Jonas]
+so 'ne grobe Übersicht hat, eben einmal, da steht diese Zahl. Gesundheit. 
+
+[Georg]
+Ja, red weiter. 
+
+[Georg]
+Red weiter. Eine Zahl. 
+
+[Jonas]
+Genau. Einmal die Zahl, wo man, wo man weiß, wie viel wird sicher geliefert, vielleicht wie viel 
+
+[Jonas]
+unsicher und wie viel, wie viele Kopien schaffen wir sicher nicht. 
+
+[Jonas]
+Und dann... Ah, guck mal, du hattest den Stift. 
+
+[Georg]
+Nein, Sandra. 
+
+[Jonas]
+Ach so. 
+
+[Georg]
+Das war ein weißer. 
+
+[Jonas]
+Ah ja. 
+
+[Jonas]
+Ähm, 
+
+[Jonas]
+und dann, 
+
+[Jonas]
+ähm, vielleicht eine Karte, weißt du, wo man sieht, wie zurzeit die- 
+
+[Speaker 2]
+Seid ihr gerade so ein bisschen am, äh, Locked-in oder so, also am Arbeiten oder so? 
+
+[Georg]
+Eigentlich schon, ja. 
+
+[Speaker 2]
+Okay. Könntest du vielleicht was aussuchen, so ein, zwei Tische oder hätte ich mal so wegen dem, dem Food-Team, weil wir hier so ein bisschen so Platz für irgendwelche Gespräche. 
+
+[Georg]
+Ah, check, ja. 
+
+[Speaker 2]
+Ja, genau. 
+
+[Speaker 2]
+Also nur ein, zwei Tische, dann reicht voll aus. Aber ist ja ganz cool. Danke euch. 
+
+[Jonas]
+Okay. 
+
+[Georg]
+Nein, nein, also wir brauchen nur... 
+
+[Speaker 2]
+Okay. Welche Challenge? 
+
+[Speaker 2]
+Aber habt ihr gutes, wo ihr schon so eine Herangehensweise oder einen Insider? 
+
+[Georg]
+Ja, ja. 
+
+[Speaker 2]
+PlayStation ist eure? 
+
+[Georg]
+Haben wir schon, äh, wir haben schon abgeklärt mit denen. 
+
+[Jonas]
+Und wir müssen, äh, bei uns läuft gerade Aufnahme, wo wir uns gerade... Ist es okay, dass du da drauf bist? [lacht] 
+
+[Speaker 2]
+Wow, richtig gleich. Nein, das heißt- 
+
+[Jonas]
+Ja, wir erfahren, Claude wird ja immer ganz fuchsig. Ähm, ist eine Straftat, jemanden aufzunehmen ohne seine Einwilligung in Deutschland. 
+
+[Speaker 2]
+Nein, es ist, es ist okay. [lacht] Einfach so, ein Transkript, wo du ihm sagst, ist nicht okay, sorry, ihr dürft das nicht benutzen. 
+
+[Jonas]
+[lacht] Danke. 
+
+[Speaker 2]
+Nein, macht euer Ding und, ähm, wenn ihr was braucht, sagt Bescheid. 
+
+[Jonas]
+Danke schön. 
+
+[Georg]
+Danke. [lacht] Du bist so clean. 
+
+[Georg]
+Clean aber. 
+
+[Georg]
+Okay. Ähm, 
+
+[Georg]
+genau, eine Zahl, äh- 
+
+[Jonas]
+Ja, genau. Ich bin mir noch nicht sicher, ob das wirklich so cool ist, weil vielleicht ist es auch bisschen unnötig, aber die Zahl genau einmal, wie viel ist sicher, wie viel ist unsicher, wie viel kommt sicher nicht, irgendwie grün, gelb, rot oder so. Und dann die Karte, weißt du, wie zurzeit die, ähm, was zurzeit wie zugestellt wird. Vielleicht auch die Schiffe eingezeichnet, weißt du, wo ist gerade das Schiff, wo ist gerade das Flugzeug. Und dann, wenn's die Änderung gibt, weißt du, dann ist ja das X drüber und dann wird irgendwie die Ersatzding jetzt auch auf der Karte markiert. 
+
+[Georg]
+Also es darf halt kein Informationsüberfluss sein, weil das mit der Karte hatte ich auch genau das. Ich hätte mir auch überlegt, irgendwie so was wie... Also du hast ja die verschiedenen Bauteile. Ähm, zum Beispiel, wenn du weißt, dass die Cases sicher alle grün sind oder so, dann brauchst du die ja nicht in die Karte so wirklich einzeichnen. Du kannst halt zum Beispiel rechts so anzeigen, okay, hey, Cases sind grün, bam, bam, bam, bam. Und dann rot und orange die Speicherkarten oder so. Und dann werden dir in der Karte nur die Speicherkarten angezeigt. Hier, hey- Wie wird das gereroutet, ähm, und so weiter. Was kostet es? Also nicht was kostet es, aber halt Capex und alles so. 
+
+[Jonas]
+Ich habe mir einfach vorgestellt, sozusagen 
+
+[Jonas]
+deren Karte zu geben. 
+
+[Georg]
+Ja, absolut. Genau. 
+
+[Jonas]
+Es darf keine Information drauf sein. Das ist mir schon fast ein bisschen zu viel Text. 
+
+[Georg]
+Ja, ja. 
+
+[Jonas]
+Muss man schauen. Aber genau, was cool wäre, wäre, wenn man das Icon hier hat, weißt du, wo gerade das Flugzeug ist oder so, dann kann man es auch machen, bis es anklickbar ist und dann kommt so eine Infokarte, weißt du? 
+
+[Georg]
+So wie viel- 
+
+[Jonas]
+Estimated Time of Arrival, ähm, wie viel ist da drauf? Was ist der Warenwert? So was. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Das wäre ganz cool. Und das ist dann sozusagen die Management- 
+
+[Georg]
+Overview für die- 
+
+[Jonas]
+-Cloud Doctor oder so was. 
+
+[Georg]
+Da müssen wir vielleicht auch mit ihr drüber reden, was sie, äh, geil fänden und was, was sie dann wollen. 
+
+[Jonas]
+Genau. Und dann die andere Übersicht ist die, die detaillierter sein muss für den, für den Käufer. Weißt du, wo auch die ganzen Probleme gemeldet werden und... 
+
+[Georg]
+Wir brauchen auch so eine Entscheider für beide aber. Also zum Beispiel, es gibt ja Entscheidungen, die, die der, der, die Doktor entsche-- treffen muss 
+
+[Georg]
+und so weiter. 
+
+[Georg]
+Und man braucht halt zum Beispiel, wenn irgendwas gemacht wurde von den Agenten- 
+
+[Jonas]
+Wir müssen sie fragen, welche Entscheidungen wer treffen darf. Weißt du das? 
+
+[Georg]
+Ja, wir brauchen aber auch Beispiele an Entscheidungen. 
+
+[Jonas]
+Ah, er ist abgeschickt. Egal. [lacht] 
+
+[Georg]
+Du hast noch eine Minute, um- 
+
+[Jonas]
+Ja, ja, ich weiß. 
+
+[Jonas]
+Ich habe nur geschaut, ob es schon-- Ah, das ist ja abgeschickt. Ich habe geschaut, ob es abgeschickt wäre. Wäre es noch nicht abgeschickt, dann hätten wir jetzt genau Punktlandung gehabt wieder. 
+
+[Georg]
+Ich dachte achtzehn Uhr. Warum brauchen die fünfundvierzig Minuten für, 
+
+[Georg]
+fürs Matching? Also das ist wirklich krank. 
+
+[Jonas]
+Na ja, vielleicht ist es NP Complete, äh, NP Complete, das der Matching-Algorithmus. Pass auf, bei N ist gleich vierzehn. 
+
+[Georg]
+Vierzehn? 
+
+[Jonas]
+Ja. [lacht] Überschätz mal ein exponentielles Wachstum. 
+
+[Georg]
+Ja, genau. Und das braucht halt so irgendwie auch so einen Log, so was die Agenten, ähm, 
+
+[Georg]
+was zum Beispiel, 
+
+[Georg]
+was sie unternommen haben, so bisschen. Das ist schnell overflow und man braucht auch nicht viel. Aber so zum Beispiel, wenn, wenn irgendeine- 
+
+[Jonas]
+Also es muss alles geloggt sein, auf jeden Fall. 
+
+[Georg]
+Ja, ja. Aber ich meine, in meinem Overview jetzt, wenn jetzt eine Alternativroute angezeigt wird, da muss halt gesagt werden: „Okay, hey, ich habe das abgeklärt oder so mit den Teilnehmern. 
+
+[Georg]
+Sie sind bereit, das und das zu liefern." 
+
+[Jonas]
+Vielleicht kann man da irgendwie, vielleicht kann man das irgendwie clean gliedern. Also ich finde, wenn ich-- Vielleicht kannst du es... Ah, ich weiß nicht. 
+
+[Jonas]
+Weißt du, ich überlege, ob man es irgendwie anders aufgreifen kann, als, als einfach zeitbasiert, sondern ob man es irgendwie zum Beispiel pro Lieferlinie oder so machen kann. Aber häufig hängt es halt zusammen zwischen unterschiedlichen Lieferlinien. Deswegen- 
+
+[Georg]
+Ah, so oft? 
+
+[Georg]
+Also okay, wenn jetzt ein Hurricane ist, dann wird sicher die Lieferlinie von, äh, von alle Lieferlinien, die bei diesem Hurricane, ähm, betroffen sind, irgendwie eingeschränkt sein. 
+
+[Jonas]
+Ja, okay, aber das werden ja nicht so viele sein. 
+
+[Georg]
+Genau, aber oft ist es nur eine Linie oder ein Produkt. 
+
+[Jonas]
+Bestimmt. Warte, dann fällt eine aus 
+
+[Jonas]
+und dann muss der, macht der Agent Entscheidungen, die ja auch die anderen Linien betreffen. Das meine ich. Weißt du, aber... 
+
+[Jonas]
+Weißt du, wenn jetzt hier ein Hurricane ist, dann wird er alle anderen Orte, wo theoretisch, wo wir noch mehr Stückzahlen herbekommen können, anfragen, weißt du, ob sie noch mehr liefern können. 
+
+[Georg]
+Hier muss-- äh, er muss ja dann... Ja, genau. 
+
+[Jonas]
+Deswegen weiß ich nicht, ob es so viel Sinn ergibt, das pro Linie zu gliedern, weil ich glaube, das stimmt, eine Linie löst sie immer aus. 
+
+[Jonas]
+Aber gefühlt... 
+
+[Jonas]
+Eigentlich kann ich ihn in neun Zellen oder so setzen. 
+
+[Georg]
+Zellen? Oh, er ist doch dumm. [lacht] 
+
+[Jonas]
+Ähm, genau, eine Lieferlinie ist der Auslöser, aber ich glaube, es hat Auswirkungen auf mehrere Linien. Deswegen weiß ich nicht, ob so- 
+
+[Georg]
+Mach ein Beispiel, sorry, ich check's gerade nicht. 
+
+[Jonas]
+Der Agent erkennt, hier ist ein Hurricane und dann fängt er an, bei allen Fabriken, dann fängt er an, hier zu melden, ähm, es kommt zu spät und er fragt dort und dort an, ob sie noch mehr liefern können. Weißt du, dann sind das viele Fragen, die auch andere Linien betreffen. 
+
+[Georg]
+Ja, ja, aber 
+
+[Georg]
+ich würde es gar nicht so auf die Linien beschränken, sondern immer auf das, was geliefert wird. 
+
+[Georg]
+Weil du fragst ja nicht- 
+
+[Jonas]
+Ah, ja, das ist die Sortierung. Ja, ja. Also zum Beispiel die, die Spielfigur. 
+
+[Georg]
+Ja, ja, die aus Indien kommt. 
+
+[Jonas]
+Ja. 
+
+[Jonas]
+Guter Call. Damit ist es auch, äh, viel skalierbarer, ja. 
+
+[Georg]
+Ja, genau. Dann auch in der Karte auswählbar quasi. 
+
+[Georg]
+Zum Beispiel, wenn, wenn du, wenn du jetzt dreißig Prozent der Spielfiguren in Indien machst und dreißig aus Amerika oder so, dann musst du das ja gleichzeitig sehen, immer eigentlich. Weil es ist auch für, für die KPIs allein, wenn du sagst: „Okay, hey, wie viele der Spielfiguren kommen pünktlich an?" Dann, also, das ist ja immer miteinander verbunden. 
+
+[Jonas]
+Irgendwie müssen wir dann noch und nicht sloppy diese Verknüpfung darstellen, weil zum Beispiel die Spielfigur hat ja immer eine Auswirkung auf die Deluxe Edition, weißt du, weil die Deluxe Edition die Spielfigur benötigt. Also bisschen diese Dependency muss man auch dann irgendwie- 
+
+[Georg]
+Ja. 
+
+[Georg]
+Ja klar, es muss, es muss hierarchisch sein. Also leider haben wir zwei Produkte auf der Top Level. 
+
+[Jonas]
+Hast du leider gesagt? 
+
+[Georg]
+Ja. 
+
+[Jonas]
+[lacht] Okay. 
+
+[Georg]
+Weil sonst wär, sonst wär's ja klar irgendwie. Also bräuchte man die Abstraktionsebene Produkt, Endprodukt nicht. 
+
+[Jonas]
+Ja. 
+
+[Georg]
+Weil du, du, dich interessiert ja pro Endprodukt, interessiert dich, okay, welche Lieferlinie hat den grö-größten Bottleneck gerade. 
+
+[Jonas]
+Ja, aber für mich sind's ja noch zwei unterschiedliche Lieferketten. 
+
+[Georg]
+Ja, ja klar, irgendwie so ist es ja. 
+
+[Jonas]
+Aber sie haben schon so Software, weil beide brauchen das gleiche Spiel, die gleiche Spielkarte und so nicht. 
+
+[Georg]
+Und deswegen wolltest du ja fragen, was- 
+
+[Jonas]
+Wichtige. 
+
+[Georg]
+-wichtige ist. 
+
+[Jonas]
+Obwohl irgendwie diese Infos, ich hab das Gefühl, keine Ahnung. 
+
+[Jonas]
+Ich weiß noch nicht so ganz, was wir mit den Infos machen müssen. Also die Info, weißt du, wenn wir die bekommen, was wichtiger ist. Es ist ja gar nicht am Ende des Tages die Challenge, dass alles glatt über die Bühne läuft. 
+
+[Georg]
+Ich glaub, deswegen, also ich will auch jetzt bei dem Meeting, ist es mir by the way wichtig, 
+
+[Georg]
+weil das ist ja der CEO oder nicht CEO, der Founder. 
+
+[Jonas]
+CPO. 
+
+[Georg]
+CPO. Nein, ich mein, sorry, ich mein jetzt- 
+
+[Jonas]
+Von Leo. 
+
+[Georg]
+Von Leo ist es ja ein Founder. 
+
+[Jonas]
+Ja. 
+
+[Georg]
+Das heißt, ich will da eher einfach, dass unsere Persönlichkeiten gut sind und dass wir interessante Fragen stellen. Ist mir wichtig. 
+
+[Jonas]
+Das ist keine, das ist nicht so die krasseste Networking-Operation. 
+
+[Georg]
+Nein, nein, nein, nein. Das ist ja... 
+
+[Georg]
+Ich glaube, dass er, wenn er die Projekte bewertet, hauptsächlich oder größtenteils die Menschen bewertet. 
+
+[Georg]
+Meinst du nicht? 
+
+[Jonas]
+Nee, ich glaub, die Pitches. Ich glaub, er wird die Pitches bewerten. 
+
+[Jonas]
+Und ich weiß auch gar nicht, ob er überhaupt die Bewertung macht, weißt du? Aber weiß nicht, ob er da morgen da ist. 
+
+[Jonas]
+Also ich mein, klar, man sollte immer sympathisch wirken, aber ich weiß nicht, ob's so wichtig ist, dass wir da jetzt perfekt überzeugen. 
+
+[Georg]
+Ja, okay, mir war... Ich checke. 
+
+[Jonas]
+Also es hängt ein bisschen von seiner Persönlichkeit ab. 
+
+[Georg]
+Wang Sho. [lacht] So ein geiler Name, by the way. 
+
+[Jonas]
+Mars Young. Ich glaub, man muss das H einfach weglassen. Mars Young, weil dann kann man's clean aussprechen als Deutscher. 
+
+[Georg]
+Mars Young. Ja, true. Also das H-W kannst du einfach nicht aussprechen. 
+
+[Jonas]
+[lacht] Mars Young. 
+
+[Georg]
+Mars 
+
+[Georg]
+Young. 
+
+[Jonas]
+Okay. 
+
+[Jonas]
+Ähm, 
+
+[Jonas]
+also jetzt habe ich schon das Dashboard so grob. 
+
+[Jonas]
+Ah ja, den, den Workflow von dem Agenten müssen wir noch besprechen, aber das können wir ja auch in dem zweiten Planungsgespräch machen. 
+
+[Georg]
+Es geht, ja, also, ja. 
+
+[Georg]
+Weil jetzt erstmal, erstmal Datenset und, ähm... 
+
+[Jonas]
+Ja. 
+
+[Jonas]
+Ja, den einen können wir, ähm, den Datenagenten nennen und das andere ist der Aktionsagent. 
+
+[Georg]
+Ja, ja, ja. 
+
+[Jonas]
+Genau. Und den Aktionsagenten können wir noch später besprechen. 
+
+[Georg]
+Gibt ja richtig Valuable hier. 
+
+[Jonas]
+Ja. Wir können auch... 
+
+[Jonas]
+Na ja, aber jetzt sind wir lowkey... 
+
+[Jonas]
+Ja, über unseren Pitch müssen wir uns auch noch Gedanken machen. 
+
+[Georg]
+Richtig. 
+
+[Jonas]
+Da hin aber... 
+
+[Jonas]
+Ähm. Okay, eigentlich, wenn wir diese Karte haben, weißt du, in dem, in dem Stakeholder-Überblick, dann können wir da so eintragen, dass da jetzt irgendein, irgendein Event passiert, weißt du? Hurricane oder ein Streik oder so. Das können wir sozusagen zeigen und dann sagen wir: „Nein, was machen wir jetzt?“ Nein, nein. [lacht] Sagen wir ein bisschen cooler. 
+
+[Jonas]
+Ähm, aber genau, und dann können wir sagen, dann können wir zeigen, wie sozusagen der, der Agent handelt, weißt du? Und man kann da ein bisschen betonen, 
+
+[Jonas]
+ich würd betonen, wie schnell das alles läuft, weißt du? Vielleicht macht man so extra so, ähm, 10:20 Uhr. [lacht] Hurricane in... Erste Berichte treffen ein von einem Hurricane in Südostasien. 10:20 Uhr und 30 Sekunden. [lacht] 
+
+[Georg]
+Nein, nein, wir sind schon auf Polymarket unterwegs. Das ist unsere, äh, Source of Truth fürs Wetter. [lacht] 
+
+[Georg]
+Sagen: „Okay.“ 
+
+[Jonas]
+Nein, ich glaub, wir können- 
+
+[Georg]
+9:50 Uhr, die Polymarkt-Raid für den Hurricane in Südostasien. 
+
+[Jonas]
+[lacht] Ja, ich würd schon was nehmen, wo es sicher ist, weißt du? Eine Sicherheitquelle. 
+
+[Georg]
+Ja, natürlich. 
+
+[Jonas]
+Okay. 
+
+[Georg]
+Ich hab richtig gesehen, wie du überlegst, wie du mich überzeugst, dass es eine schlechte Idee ist. 
+
+[Jonas]
+[lacht] Ich check schon deine Polymarket-Begeisterung. 
+
+[Jonas]
+Aber anscheinend ist jetzt, ähm... 
+
+[Jonas]
+Der Competitor ist größer. 
+
+[Georg]
+Kalshi. Ja, ich weiß, ist halt reguliert. 
+
+[Georg]
+Aber ja, was ist reguliert? Es ist, ähm, also es ist 
+
+[Georg]
+ein eingetragener Trading 
+
+[Georg]
+und ist in den USA quasi legal. Es ist nicht auf der Blockchain oder so. 
+
+[Jonas]
+Polymarket nicht. 
+
+[Georg]
+Polymarket nicht. Es ist nur geduldet. 
+
+[Georg]
+Also... 
+
+[Georg]
+Kalshi ist von dieser Trading Agency anerkannt als, ähm, 
+
+[Georg]
+als Futures Market. 
+
+[Jonas]
+Okay. 
+
+[Georg]
+Also ich würd auch auf Kalshi traden. [lacht] 
+
+[Jonas]
+Okay. 
+
+[Jonas]
+Ja, aber Pitch können wir uns ja noch überlegen. Ähm, 
+
+[Jonas]
+vielleicht sollten wir das noch heute Abend uns schon mal so, so Vision, ähm, überlegen. 
+
+[Georg]
+Ja, wir hatten ja eh drüber gesprochen, dass wir Pitch first, also das sollte ja eigentlich unser Fokus sein.
+
+[Jonas]
+Ja, aber was sind so die Bestandteile? Also wir wollen irgendwie, dass es diesen Notfall gibt oder so, weil der schon grafisch ist. 
+
+[Jonas]
+Ja, man kann sich auch, was die da in ihre Dokumente geschrieben haben, dass sie wollen, 
+
+[Jonas]
+was uns, was uns die Kunden gesagt haben, was die erzählt haben, was sie, was sie für Probleme haben und was sie sich wünschen, 
+
+[Jonas]
+dass wir das berücksichtigt haben. 
+
+[Georg]
+Oh. 
+
+[Jonas]
+Das stand im PDF drin. Also zum Beispiel jetzt das, was der, was der Head of, 
+
+[Jonas]
+Head of Einkaufs gesagt hat, dass er es nur benutzen würde, wenn er früher Informationen bekommt als vom Zulieferer. 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Das müssen wir irgendwie da rein integrieren. 
+
+[Georg]
+Wir müssen auch diese ganzen Datenlage rein integrieren. 
+
+[Georg]
+Nicht nur erst die Eskalation, sondern... 
+
+[Jonas]
+Boah, das ist ganz schön viel dafür, dass wir in die Tiefe gehen sollen, nicht in die Breite. 
+
+[Georg]
+Aber das in die Tiefe, das kann ja auch irgendein Artefakt sein, weißt du, vom Stock Artefakt. 
+
+[Jonas]
+Du hast schon recht. 
+
+[Georg]
+Weil allein das Grundgerüst aufzustellen, ist schon gar nicht so leicht. 
+
+[Jonas]
+Ja. 
+
+[Jonas]
+Klar, also pre-AI wäre es unmöglich gewesen für einen Hacker. [lacht] Ähm, genau. Und dann muss rein, wie unser, wie unser KI-Agent handelt. Und vielleicht am besten, wir bereiten dann so... 
+
+[Jonas]
+Hm. Entweder wir machen Live-Demo... 
+
+[Jonas]
+Ja, ich glaube, ich würde eher eine Live-Demo sehen, als dass wir PowerPoint 
+
+[Jonas]
+machen. Aber eigentlich wäre PowerPoint cleaner, 
+
+[Jonas]
+oder? 
+
+[Georg]
+Also man kann ja... 
+
+[Jonas]
+Also das wäre nicht wirklich eine LLM laufen lassen, sondern dass wir den Track schon vorbereitet haben. 
+
+[Jonas]
+Weißt du, weil dann kann man ihn irgendwie... 
+
+[Jonas]
+Ja, man kann so eine Mischung machen. Weißt du, man kann sagen, er hat jetzt das gesehen, weißt du, und dann sagt man so, dann zeigt man so die Schritte, die er macht. Weißt du, so ein bisschen so, so einsätzige Schritte in der Ich-Form, weißt du, wie der, wie der Latte-Koch war. [lacht] 
+
+[Georg]
+Ja, 
+
+[Georg]
+ja. 
+
+[Jonas]
+Ähm, 
+
+[Jonas]
+ich sehe, dass ein Unwetter Ostasien betrifft. 
+
+[Jonas]
+Ich recherchiere potenzielle Auswirkungen auf unsere Lieferkette. 
+
+[Georg]
+Ich sehe große Risiken. [lacht] 
+
+[Jonas]
+Ich eskaliere dem Problem zu kritisch. [lacht] 
+
+[Georg]
+Ich schreibe potenzielle Alternativlieferanten an 
+
+[Georg]
+und hole neue Angebote ein. 
+
+[Jonas]
+Ja. Ich melde das Problem an den Kunden. 
+
+[Jonas]
+Ja, irgendwie so was, äh, ist vielleicht ganz gut. 
+
+[Jonas]
+Ja, ich habe noch nicht ganz die Vision, muss ich sagen. 
+
+[Georg]
+Ich auch noch nicht. 
+
+[Jonas]
+Weil das kannst du nicht so clean in der Live-Demo machen, weißt du? 
+
+[Georg]
+Ja. 
+
+[Jonas]
+Oh cool. 
+
+[Jonas]
+Haben wir jetzt erst mal ganz schön viel besprochen schon. 
+
+[Jonas]
+Dann machen wir jetzt erst mal die 
+
+[Jonas]
+Informationszeug. 
+
+[Jonas]
+Also wie teilen wir überhaupt Arbeit auf? 
+
+[Jonas]
+Teilen wir überhaupt Arbeit auf? 
+
+[Georg]
+Ich würde lowkey, ich würde... 
+
+[Georg]
+Ich würde, äh, auch wenn es vielleicht ein bisschen schnell ist, aber ich würde einfach 
+
+[Georg]
+schon mal diesen ganzen Datenbestand und den Datenagenten und so, dass ja alles ganz klar ist aus dem Transkript, einfach implementieren lassen. Erste Version des Dashboards auch implementieren lassen, jetzt vom Agenten. Wir überlegen uns, welche konkreten Fragen wir dir Doktor stellen und machen Pause bis achtzehn 
+
+[Georg]
+Uhr. Und dann schauen wir uns an, wie es ausschaut. Und dann müssen wir überlegen, ob einer iteriert schon auf dem KI-Dashboard und das, was wir gelernt haben, aus dem Gespräch einbaut und der andere schaut in die Zukunft und macht den Agent Loop oder so. 
+
+[Jonas]
+Ja, warte, dann, ähm-

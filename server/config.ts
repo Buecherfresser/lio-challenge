@@ -1,0 +1,92 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+export const APP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+// .env in the app folder wins, the token file one level up is the fallback for the portal token.
+for (const f of [path.join(APP_DIR, ".env"), path.join(APP_DIR, "..", "lio-key.env")]) {
+  if (fs.existsSync(f)) {
+    try { process.loadEnvFile(f); } catch { /* unreadable env file: ignore */ }
+  }
+}
+
+const env = (k: string, d = "") => (process.env[k] ?? "").trim() || d;
+const bool = (k: string, d = false) => (env(k) ? /^(1|true|yes|on)$/i.test(env(k)) : d);
+const num = (k: string, d: number) => (env(k) && Number.isFinite(Number(env(k))) ? Number(env(k)) : d);
+
+function parsePrices(s: string): Record<string, { input: number; output: number }> {
+  const out: Record<string, { input: number; output: number }> = {};
+  for (const part of s.split(",").map((x) => x.trim()).filter(Boolean)) {
+    const [model, p] = part.split("=");
+    const [i, o] = (p ?? "").split("/").map(Number);
+    if (model && Number.isFinite(i) && Number.isFinite(o)) out[model] = { input: i, output: o };
+  }
+  return out;
+}
+
+function parseShifts(s: string): { start: string; end: string }[] {
+  return s.split(",").map((x) => x.trim()).filter(Boolean).map((x) => {
+    const [start, end] = x.split("/");
+    return { start: new Date(start).toISOString(), end: new Date(end).toISOString() };
+  }).filter((x) => x.start < x.end);
+}
+
+function parseMap(s: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of s.split(",").map((x) => x.trim()).filter(Boolean)) {
+    const [k, v] = part.split("=");
+    if (k && Number.isFinite(Number(v))) out[k.trim()] = Number(v);
+  }
+  return out;
+}
+
+const dataDir = path.resolve(APP_DIR, env("DATA_DIR", "./data"));
+
+export const config = {
+  port: num("PORT", 8787),
+  dataDir,
+  archiveDir: path.join(dataDir, "archive"),   // snapshots and file blobs, never deleted
+  outboxDir: path.join(dataDir, "outbox"),
+  promptsDir: path.join(APP_DIR, "prompts"),
+  webDist: path.join(APP_DIR, "web", "dist"),
+
+  lio: {
+    baseUrl: env("LIO_BASE_URL", "https://start-hack-portal-cxh3crbdaef2f8gt.westeurope-01.azurewebsites.net").replace(/\/+$/, ""),
+    token: env("LIO_TOKEN") || env("BEARER"),
+  },
+  source: (env("SOURCE", "live") === "replay" ? "replay" : "live") as "live" | "replay",
+  syncIntervalSec: num("SYNC_INTERVAL_SEC", 180),
+  replayIntervalSec: num("REPLAY_INTERVAL_SEC", 0),
+
+  deadline: new Date(env("DEADLINE", "2026-11-22T20:00:00+01:00")).toISOString(),
+  shifts: parseShifts(env("SHIFTS", "2026-11-21T06:00:00+01:00/2026-11-21T22:00:00+01:00,2026-11-22T06:00:00+01:00/2026-11-22T20:00:00+01:00")),
+  fixedNow: env("NOW") ? new Date(env("NOW")).toISOString() : null,
+  // Value of one unit of a currency in EUR. Used to compare order values with approval limits.
+  fxToEur: { EUR: 1, ...parseMap(env("FX_TO_EUR", "USD=0.92,CNY=0.13,INR=0.011,PLN=0.23")) } as Record<string, number>,
+  // A shipment that is on its way and has had no tracking update for this many hours is stale.
+  trackingMaxAgeHours: parseMap(env("TRACKING_MAX_AGE_HOURS", "sea=36,air=8,road=6")),
+
+  openai: {
+    apiKey: env("OPENAI_API_KEY"),
+    modelExtract: env("OPENAI_MODEL_EXTRACT", "gpt-6-luna"),
+    modelVision: env("OPENAI_MODEL_VISION", "gpt-6.1-terra"),
+    modelAgent: env("OPENAI_MODEL_AGENT", "gpt-6.2-sol"),
+    prices: parsePrices(env("OPENAI_PRICES", "gpt-6-luna=0.10/0.50,gpt-6.1-terra=1/5,gpt-6.2-sol=2/10,gpt-6.2-astra=8/40")),
+    concurrency: num("LLM_CONCURRENCY", 6),
+  },
+
+  mail: {
+    mode: (env("MAIL_MODE", "outbox") === "live" ? "live" : "outbox") as "outbox" | "live",
+    allowedSenders: env("MAIL_ALLOWED_SENDERS").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean),
+    from: env("MAIL_FROM"),
+    fromName: env("MAIL_FROM_NAME", "Soony Procurement"),
+    smtp: { host: env("SMTP_HOST"), port: num("SMTP_PORT", 465), user: env("SMTP_USER"), pass: env("SMTP_PASS") },
+    imap: { host: env("IMAP_HOST"), port: num("IMAP_PORT", 993), user: env("IMAP_USER"), pass: env("IMAP_PASS"), pollSec: num("IMAP_POLL_SEC", 120) },
+    autoSendClarifications: bool("AUTO_SEND_CLARIFICATIONS", false),
+    sendOnApproval: bool("SEND_ON_APPROVAL", false),
+  },
+};
+
+fs.mkdirSync(config.archiveDir, { recursive: true });
+fs.mkdirSync(config.outboxDir, { recursive: true });

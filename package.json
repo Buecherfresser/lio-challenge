@@ -1,0 +1,36 @@
+{
+  "name": "lineguard",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --watch-path=server --watch-path=shared server/main.ts",
+    "start": "node server/main.ts",
+    "typecheck": "tsc --noEmit",
+    "import-folder": "node server/cli.ts import-folder",
+    "sync": "node server/cli.ts sync",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.11",
+    "csv-parse": "^7.0.3",
+    "hono": "^4.13.19",
+    "imapflow": "^2.12.2",
+    "mailparser": "^3.15.0",
+    "mammoth": "^1.13.0",
+    "nodemailer": "^10.6.1",
+    "openai": "^7.62.0",
+    "unpdf": "^2.2.1",
+    "xlsx": "^0.18.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.9.0",
+    "@types/node": "^26.6.6",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "^7.0.2"
+  }
+}
