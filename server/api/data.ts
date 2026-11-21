@@ -162,7 +162,7 @@ dataApi.post("/dev/inbound", async (c) => {
   // If a pass is already running it may be past the mail step, so look once more when it is through.
   if (llmAvailable()) {
     const unread = () => Boolean(get("SELECT 1 AS x FROM messages WHERE id = ? AND processed = 0", message.id));
-    void runDataAgent({ limit: 0 }).then(() => (unread() ? runDataAgent({ limit: 0 }) : null)).catch(() => undefined);
+    void runDataAgent({ mailsOnly: true }).then(() => (unread() ? runDataAgent({ mailsOnly: true }) : null)).catch(() => undefined);
   }
   return c.json(message);
 });

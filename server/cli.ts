@@ -26,7 +26,13 @@ if (cmd === "import-folder") {
   // node server/cli.ts data-agent [--limit=20] : one pass of the data agent (read documents and mails, check rules, write questions)
   const { runDataAgent } = await import("./agents/data/index.ts");
   const limit = flags.find((f) => f.startsWith("--limit="))?.split("=")[1];
-  console.log(await runDataAgent({ limit: limit !== undefined ? Number(limit) : undefined }));
+  const perLane = flags.find((f) => f.startsWith("--per-lane="))?.split("=")[1];
+  console.log(await runDataAgent({ limit: limit !== undefined ? Number(limit) : undefined, perLane: perLane !== undefined ? Number(perLane) : undefined, correspond: flags.includes("--correspond"), mailsOnly: flags.includes("--mails") }));
+} else if (cmd === "inbound") {
+  // node server/cli.ts inbound <supplier id> <subject> <file with the body> : store a received mail, as if it came in by IMAP
+  const { recordInbound } = await import("./mail/inbox.ts");
+  const fs = await import("node:fs");
+  console.log(recordInbound({ supplier_id: args[0], subject: args[1], body: fs.readFileSync(args[2], "utf8") }));
 } else if (cmd === "rules") {
   // node server/cli.ts rules [--dry] : check for deviations without a model. --dry prints them and writes nothing
   const { findDeviations, runRules } = await import("./agents/data/rules.ts");
@@ -57,5 +63,5 @@ if (cmd === "import-folder") {
   const { runActionAgent } = await import("./agents/action.ts");
   console.log(await runActionAgent({ force: flags.includes("--force") }));
 } else {
-  console.log("Commands: import-folder <dir> [time] [--apply], sync, snapshots, risk-agent [--force], action-agent [--force], data-agent [--limit=N], rules [--dry], issues, retry-failed, bootstrap-export <file>, bootstrap-import <file>");
+  console.log("Commands: import-folder <dir> [time] [--apply], sync, snapshots, risk-agent [--force], action-agent [--force], data-agent [--limit=N] [--per-lane=N] [--correspond] [--mails], inbound <supplier> <subject> <body file>, rules [--dry], issues, retry-failed, bootstrap-export <file>, bootstrap-import <file>");
 }

@@ -1,6 +1,8 @@
 node_modules/
-data/
-data-*/
+/data/
+/data-*/
 .env
 web/dist/
 *.log
+.DS_Store
+transkripte/

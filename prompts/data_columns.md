@@ -1,6 +1,6 @@
 # Matching the columns of a table
 
-Soony exports its base data as tables. The column names differ between systems and change over time. You get the name of a file, the target fields code needs, the column names the file has, and its first rows.
+The customer exports its base data as tables. The column names differ between systems and change over time. You get the name of a file, the target fields code needs, the column names the file has, and its first rows.
 
 For each target field, name the one column of the file that holds it, or null if the file has no such column.
 

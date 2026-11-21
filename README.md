@@ -31,7 +31,7 @@ Every 3 minutes Lineguard runs these steps in order. "Sync now" in the dashboard
 
 1. **Sync** (code only). It asks the portal for the file list and compares checksums with the last snapshot. New and replaced files become events. Every sync is stored as a complete version in `data/archive` and is never deleted.
 2. **Base data** (code only). Master data, purchase orders from both exports, goods receipts, stock, shipments and the pack-out log are loaded into tables.
-3. **Data agent**. It reads each new or changed document (PDF, scan, spreadsheet, mail) into facts with a fixed schema, and code checks every fact before it is stored. Then rules compare the facts with what Soony expects and with each other. Questions a supplier can answer go into one mail per supplier, in the supplier's language. Questions only Soony can answer become a task for the responsible role.
+3. **Data agent**. A reading agent works through every new or changed document and every received mail, one at a time. It looks things up in Soony's data, records facts (code checks each one and tells the agent at once when one does not fit), keeps notes per supplier and part, and writes down questions. Soony's own files come first, then each supplier's files in order, suppliers in parallel. Rules then compare the facts with what Soony expects. Once nothing new is left to read, a correspondence round turns all open issues into one mail per supplier in the supplier's language, one task per role at Soony, or closes them.
 4. **Risk agent**. It connects facts that single rules miss and reports risks. It states what could go wrong, and code works out how many copies that costs.
 5. **Action agent** (a mock for now). It turns each risk into decision cards: the option, copies saved, cost, who approves under policy PP-07, and a mail draft. Nothing leaves the building. Approve and Reject change the status and are logged.
 
@@ -55,9 +55,15 @@ An arrival date without a time counts as the end of that day, which is the caref
 
 ## Mail
 
-Outgoing mail goes to `data/outbox` as files while `MAIL_MODE=outbox`, which is the default. To send for real, set `MAIL_MODE=live`, the SMTP and IMAP settings, and list the sender addresses you registered in the portal under `MAIL_ALLOWED_SENDERS`. Lineguard only sends from those.
+The suppliers in the challenge are played by AI agents that answer real e-mail. Their addresses are in the supplier profiles. The portal has no mail endpoint, so Lineguard sends and receives through an ordinary mailbox:
 
-Clarification mails wait in the inbox under "Needs approval" until you click Send. Set `AUTO_SEND_CLARIFICATIONS=true` to send them without a click.
+1. Take a mailbox with SMTP and IMAP access, for example a Gmail account with an app password.
+2. Register its address in the portal under Settings. Suppliers do not answer other senders.
+3. Set in `app/.env`: `MAIL_MODE=live`, `MAIL_FROM`, `MAIL_ALLOWED_SENDERS`, and the `SMTP_*` and `IMAP_*` settings.
+
+Lineguard checks the mailbox every two minutes and reads replies like any other source. While `MAIL_MODE=outbox`, which is the default, outgoing mail is written to `data/outbox` as files instead.
+
+Mails wait in the inbox under "Needs approval" until you click Send. Set `AUTO_SEND_CLARIFICATIONS=true` to send them without a click.
 
 ## Replay
 
@@ -83,7 +89,8 @@ node server/cli.ts import-folder ../soony-data
 | `server/agents` | Data agent, risk agent, action agent |
 | `server/compute` | The tools that count: parts, copies per edition, what-if, supplier reliability, approvals |
 | `server/mail` | Sending, outbox, mailbox polling |
-| `prompts` | Every prompt, including the writing style that all generated text follows |
+| `prompts` | The agents' task prompts, free of anything customer specific, and `customer.md` with what the agents know about the customer |
+| `.claude/skills/writing-style` | The writing style. Coding agents use it as a skill, and the app appends it to every agent prompt |
 | `shared/api.ts` | The types and routes the dashboard and the backend share |
 | `web` | The dashboard |
 | `data` | Working database, archive and outbox (not in version control) |

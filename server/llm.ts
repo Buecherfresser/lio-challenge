@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import OpenAI from "openai";
 import { config } from "./config.ts";
+import { totalSpendUsd } from "./events.ts";
 import type { ToolCallTrace } from "../shared/api.ts";
 
 // One place for every OpenAI call: Structured Outputs for reading, tool calling for the agents,
@@ -26,19 +27,32 @@ export const addUsage = (a: Usage, b: Usage): Usage => ({ model: a.model, tokens
 let active = 0;
 const waiting: (() => void)[] = [];
 async function slot<T>(fn: () => Promise<T>): Promise<T> {
+  if (config.openai.budgetUsd > 0 && totalSpendUsd() >= config.openai.budgetUsd) {
+    throw new Error(`The OpenAI budget of ${config.openai.budgetUsd} USD is used up (OPENAI_BUDGET_USD). No more model calls.`);
+  }
   if (active >= config.openai.concurrency) await new Promise<void>((r) => waiting.push(r));
   active++;
   try { return await fn(); } finally { active--; waiting.shift()?.(); }
 }
 
 const promptCache = new Map<string, string>();
+const read = (file: string) => fs.readFileSync(file, "utf8").replace(/^---\n[\s\S]*?\n---\n/, "").trim(); // a skill file starts with front matter
 /** Load a prompt file from prompts/. */
 export function prompt(name: string): string {
-  if (!promptCache.has(name)) promptCache.set(name, fs.readFileSync(path.join(config.promptsDir, name), "utf8").trim());
+  if (!promptCache.has(name)) promptCache.set(name, read(path.join(config.promptsDir, name)));
   return promptCache.get(name)!;
 }
-/** Every call that writes text for people gets the writing style appended to its system prompt. */
-export const withStyle = (system: string) => `${system}\n\n${prompt("writing_style.md")}`;
+/** The writing style is the project's writing-style skill, so people and agents follow the same file. */
+const WRITING_STYLE = path.join(config.promptsDir, "..", ".claude", "skills", "writing-style", "SKILL.md");
+
+/**
+ * The full system prompt of an agent that writes for people: its own task, then what we know about the customer
+ * (prompts/customer.md), then the writing style. The task prompts stay free of anything customer specific.
+ */
+export function withStyle(system: string): string {
+  if (!promptCache.has("@style")) promptCache.set("@style", read(WRITING_STYLE));
+  return `${system}\n\n# The customer\n\n${prompt("customer.md").replace(/^#[^\n]*\n+/, "")}\n\n${promptCache.get("@style")}`;
+}
 
 export type Part =
   | { type: "text"; text: string }
@@ -87,10 +101,12 @@ export interface Tool {
 export interface AgentArgs {
   model: string;
   system: string;
-  user: string;
+  user: string | Part[];
   tools: Tool[];
   maxSteps?: number;
   onToolCall?: (t: ToolCallTrace) => void;
+  /** Checked after each round of tool calls. True ends the conversation without another model turn. */
+  stopWhen?: (trace: ToolCallTrace[]) => boolean;
 }
 
 /**
@@ -103,7 +119,7 @@ export async function runAgent(a: AgentArgs): Promise<{ text: string; trace: Too
   const byName = new Map(a.tools.map((t) => [t.name, t]));
   const trace: ToolCallTrace[] = [];
   let usage: Usage = { model: a.model, tokens_in: 0, tokens_out: 0, cost_usd: 0 };
-  let input: any = [{ role: "user", content: a.user }];
+  let input: any = [{ role: "user", content: typeof a.user === "string" ? a.user : toContent(a.user) }];
   let previous: string | undefined;
   const max = a.maxSteps ?? 24;
 
@@ -132,6 +148,7 @@ export async function runAgent(a: AgentArgs): Promise<{ text: string; trace: Too
       a.onToolCall?.(t);
       outputs.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result ?? null).slice(0, 60_000) });
     }
+    if (a.stopWhen?.(trace)) return { text: "", trace, usage, steps: step };
     input = outputs;
   }
   return { text: "", trace, usage, steps: max };

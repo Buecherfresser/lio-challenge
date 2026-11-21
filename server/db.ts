@@ -175,6 +175,17 @@ CREATE TABLE IF NOT EXISTS decisions (
   created_at TEXT NOT NULL, decided_at TEXT, decided_by TEXT, decision_reason TEXT
 );
 
+-- What the reading agent writes down for itself and for people. Append-only.
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic TEXT NOT NULL,               -- general | supplier:<id> | part:<id>
+  text TEXT NOT NULL,
+  source TEXT,                       -- the document or mail it was written while reading
+  run_id TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notes_topic ON notes (topic);
+
 -- LLM-proposed column mappings for tabular files whose headers we did not know.
 CREATE TABLE IF NOT EXISTS column_mappings (
   signature TEXT PRIMARY KEY,        -- target table + sorted headers
@@ -199,6 +210,11 @@ CREATE TABLE IF NOT EXISTS carriers (carrier_id TEXT PRIMARY KEY, name TEXT, cit
 CREATE TABLE IF NOT EXISTS ports (locode TEXT PRIMARY KEY, name TEXT, country TEXT, lat REAL, lon REAL, mode TEXT);
 CREATE TABLE IF NOT EXISTS sites (site_id TEXT PRIMARY KEY, name TEXT, operator TEXT, type TEXT, country TEXT, city TEXT, lat REAL, lon REAL);
 `);
+
+// Columns added after the first release. Adding them to an existing database fails harmlessly once they exist.
+for (const sql of ["ALTER TABLE issues ADD COLUMN note TEXT"]) {
+  try { db.exec(sql); } catch { /* already there */ }
+}
 
 type Param = string | number | bigint | null | Uint8Array;
 const clean = (params: unknown[]): Param[] => params.map((p) => (p === undefined ? null : typeof p === "boolean" ? (p ? 1 : 0) : (p as Param)));
