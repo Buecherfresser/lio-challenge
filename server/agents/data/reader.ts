@@ -15,6 +15,7 @@ import type { DocRow } from "./extract.ts";
 import { knowledgeTools, readNotes } from "./knowledge.ts";
 import { loadLookup, resolveFact } from "./resolve.ts";
 import type { RawFact, Rejected, ResolvedFact } from "./resolve.ts";
+import { replyBy } from "./people.ts";
 import { sayDate } from "./rows.ts";
 import type { IssueDb, MessageDb } from "./rows.ts";
 
@@ -117,7 +118,7 @@ interface Finish { doc_type: string; language: string; doc_date: string | null; 
 interface SourceOutcome { status: "done" | "skipped" | "failed" | "waiting"; facts_new: number; questions: number; notes: number; error?: string }
 
 /** Raise or sharpen a question. One open question per object, part, kind and addressee. */
-function ask(a: { to: "supplier" | "customer"; supplier_id: string | null; object_type: string; object_id: string; part_id: string | null; type: string; title: string; question: string; background: string; fact_ids: number[] }, runId: string, source: string): { issue_id: number } | { error: string } {
+function ask(a: { to: "supplier" | "customer"; supplier_id: string | null; object_type: string; object_id: string; part_id: string | null; type: string; title: string; question: string; background: string; fact_ids: number[] }, runId: string, source: string): { issue_id: number; held?: boolean; note?: string } | { error: string } {
   if (!(a.object_type in VOCAB)) return { error: `unknown object_type ${a.object_type}` };
   if (!a.question.trim() || !a.title.trim()) return { error: "title and question are required" };
   const supplier = a.supplier_id && get("SELECT 1 AS x FROM suppliers WHERE supplier_id = ?", a.supplier_id) ? a.supplier_id : null;
@@ -128,6 +129,23 @@ function ask(a: { to: "supplier" | "customer"; supplier_id: string | null; objec
   const stamp = nowIso();
   const old = get<IssueDb>("SELECT * FROM issues WHERE dedupe_key = ?", key);
   const facts = JSON.stringify([...new Set([...(old ? json<number[]>(old.fact_ids, []) : []), ...a.fact_ids.filter((n) => Number.isInteger(n))])]);
+  // A question to this supplier about the same order line, lot or shipment is already out and its answer is not due
+  // yet: the new one joins it and does not go out again. A supplier who writes "we are checking" gets time to answer.
+  if (addressee === "supplier" && (!old || old.status === "resolved" || old.status === "answered")) {
+    const pending = get<IssueDb>(
+      "SELECT * FROM issues WHERE status = 'asked' AND addressee = 'supplier' AND supplier_id = ? AND object_type = ? AND object_id = ? ORDER BY updated_at DESC LIMIT 1",
+      supplier, a.object_type, a.object_id);
+    const due = pending ? replyBy(new Date(pending.updated_at)) : null;
+    if (pending && due && now().getTime() < new Date(due).getTime()) {
+      const merged = JSON.stringify([...new Set([...json<number[]>(pending.fact_ids, []), ...a.fact_ids.filter((n) => Number.isInteger(n))])]);
+      run("UPDATE issues SET detail = ?, fact_ids = ? WHERE id = ?", `${pending.detail}\n\nStill open as of ${sayDate(stamp, now().getUTCFullYear())}: ${a.question.trim()}`.trim(), merged, pending.id);
+      const name = get<{ name: string }>("SELECT name FROM suppliers WHERE supplier_id = ?", supplier)?.name ?? "the supplier";
+      logEvent({ actor: "data_agent", action: "question.held", run_id: runId, object: { type: a.object_type as ObjectType, id: a.object_id },
+        summary: `I did not ask ${name} again: my question "${pending.title}" about the same ${a.object_type.replace("_", " ")} is out and due by ${sayDate(due, now().getUTCFullYear())}. I added the new point to it.`,
+        input: { source, question: a.question.trim(), type }, output: { issue_id: pending.id, due }, fact_ids: json<number[]>(merged, []) });
+      return { issue_id: pending.id, held: true, note: `Not sent: question ${pending.id} about the same ${a.object_type} is already out with ${name} and is due by ${sayDate(due, now().getUTCFullYear())}. The new point was added to it. Do not ask again before then.` };
+    }
+  }
   let id: number;
   if (old && old.status !== "resolved" && old.status !== "answered") {
     // Still open or already asked: the newer wording replaces the older one, the issue stays one.
@@ -188,7 +206,7 @@ async function readSource(s: Source, runId: string): Promise<SourceOutcome> {
           to: enumT(["supplier", "customer"]), supplier_id: nullable(str()), object_type: enumT(Object.keys(VOCAB)), object_id: str(), part_id: nullable(str()),
           type: enumT(ISSUE_TYPES), title: str("short line naming the object and what is unclear"), question: str(), background: str("what you know and why it matters"), fact_ids: arr({ type: "integer" }),
         }),
-        run: (a: Parameters<typeof ask>[0]) => { const r = ask(a, runId, src); if ("issue_id" in r) questions.push(r.issue_id); return r; },
+        run: (a: Parameters<typeof ask>[0]) => { const r = ask(a, runId, src); if ("issue_id" in r && !r.held) questions.push(r.issue_id); return r; },
       },
       {
         name: "finish", description: "Close this source, after you have seen the results of record_facts.",
