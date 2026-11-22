@@ -21,6 +21,8 @@ export interface QueueItem {
   at: string
   done: boolean
   priority: Priority
+  /** An open question whose deadline has passed. It sits at the bottom of the list. */
+  stale?: boolean
   decision?: DecisionCard
   message?: Message
   task?: Task
@@ -110,7 +112,9 @@ export function buildQueue(
       ownerRole: task.role,
       at: task.status === "done" ? (task.done_at ?? task.created_at) : task.created_at,
       done: task.status === "done",
-      priority: priorityOf(task.priority, "task", null, now),
+      // A question nobody answered in time no longer helps the decision it was asked for, so it moves to "Later".
+      priority: task.stale ? "low" : priorityOf(task.priority, "task", null, now),
+      stale: task.stale,
       task,
     })
   }

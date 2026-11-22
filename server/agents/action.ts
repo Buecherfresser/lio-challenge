@@ -23,6 +23,7 @@ import { TOPICS, askQuestion, contactCounts, flushQuestions, questionSignature, 
 import type { AskInput } from "./questions.ts";
 import { assigneeFor, loadRoles } from "./data/people.ts";
 import { notifyNextSigner } from "../mail/notify.ts";
+import { closeTasks, putTask, tidyTasks } from "../tasks.ts";
 
 // The action agent. One agent works through one risk: it finds the way out, asks what is missing, lets the code check
 // whether it pays, and hands a decision with a short report to the right person. Then it follows through.
@@ -248,7 +249,8 @@ async function carryOut(decisionId: number, by: string): Promise<{ sent: boolean
   if (!m.supplier_id) {
     const role = [...loadRoles().values()].find((r) => r.person === m.person || r.deputy === m.person || r.role === m.person)?.role ?? m.person ?? "Procurement";
     tx(() => {
-      run("INSERT INTO tasks (status, role, person, title, body, issue_id, object_type, object_id, created_by, created_at) VALUES ('open', ?, ?, ?, ?, NULL, 'decision', ?, 'action_agent', ?)", role, m.person, m.subject, m.body_en, String(decisionId), nowIso());
+      putTask({ role, person: m.person, title: m.subject, body: m.body_en, object_type: "decision", object_id: String(decisionId), created_by: "action_agent",
+        decision_id: decisionId, risk_id: get<{ risk_id: number }>("SELECT risk_id FROM decisions WHERE id = ?", decisionId)?.risk_id ?? null });
       run("UPDATE messages SET status = 'outbox', sent_at = ? WHERE id = ?", nowIso(), m.id);
     });
     return { sent: true, how: `as a task for ${m.person ?? role}`, error: null };
@@ -316,6 +318,9 @@ export async function decide(id: number, verdict: "approved" | "rejected", by: s
       if (s.mail_message_id) run("UPDATE messages SET status = 'rejected' WHERE id = ? AND status IN ('draft', 'needs_approval')", s.mail_message_id);
     }
   });
+  // The questions that were out to prepare a decision for this risk are settled by it. They close before the
+  // decision's own task is created, which stays open until the decision is carried out.
+  closeTasks({ risk_id: before.risk_id, questions: true }, `A decision for this risk was approved: "${before.title}".`);
   const out = await carryOut(id, opts.auto ? "action_agent" : by);
   if (out.sent) run("UPDATE decisions SET stage = 'ordered', check_at = ? WHERE id = ?", new Date(now().getTime() + settings.answerHours * 3_600_000).toISOString(), id);
   planChanged();
@@ -477,6 +482,8 @@ export async function runActionAgent(opts: { runId?: string; riskId?: number; fo
   if (running) return none("already running");
   running = true;
   try {
+    // Housekeeping on tasks must never stop the agent from working on risks.
+    try { tidyTasks(runId); } catch (e) { logEvent({ actor: "action_agent", action: "task.tidy_failed", run_id: runId, summary: `I could not tidy the tasks: ${(e as Error).message}` }); }
     refreshQuestions();
     // A decision that waits for a risk the data no longer shows is taken back.
     for (const d of all<{ id: number }>("SELECT d.id FROM decisions d JOIN risks r ON r.id = d.risk_id WHERE d.status = 'pending' AND r.status = 'closed'")) withdraw(d.id, "The risk behind it no longer shows in the data.", runId);

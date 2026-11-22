@@ -52,7 +52,13 @@ export function QueueRow({ item, now, onOpen }: { item: QueueItem; now: string |
           <span className="hidden w-36 shrink-0 truncate text-right text-muted-foreground md:block">{item.owner}</span>
         )}
         <span className="w-24 shrink-0 text-right">
-          {item.due && !item.done && now ? <Due due={item.due} now={now} /> : null}
+          {item.stale && !item.done ? (
+            <span className="text-muted-foreground" title="The answer was due earlier and did not come.">
+              stale
+            </span>
+          ) : item.due && !item.done && now ? (
+            <Due due={item.due} now={now} />
+          ) : null}
         </span>
       </button>
     </li>
@@ -91,7 +97,18 @@ function TaskDetail({ task }: { task: Task }) {
           {done.isError && <span className="text-xs text-muted-foreground">That did not work. Try again.</span>}
         </div>
       ) : (
-        <p className="text-sm font-medium">Done{task.done_at && ` · ${dateTime(task.done_at)}`}</p>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">
+            {task.closed_reason ? "Closed by the agents" : "Done"}
+            {task.done_at && ` · ${dateTime(task.done_at)}`}
+          </p>
+          {task.closed_reason && <p className="text-sm text-muted-foreground">{task.closed_reason}</p>}
+        </div>
+      )}
+      {task.status === "open" && task.stale && task.due_at && (
+        <p className="text-sm text-muted-foreground">
+          The answer was due {dateTime(task.due_at)} and did not come. The agents went on without it.
+        </p>
       )}
       <p className="text-sm leading-relaxed whitespace-pre-wrap">{task.body}</p>
       <p className="text-xs text-muted-foreground">

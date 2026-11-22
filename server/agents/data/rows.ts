@@ -1,6 +1,7 @@
 import type { Actor, Issue, IssueStatus, IssueType, Message, MessageStatus, ObjectRef, ObjectType, Task } from "../../../shared/api.ts";
 import { json } from "../../db.ts";
 import { config } from "../../config.ts";
+import { now } from "../../clock.ts";
 
 // Database rows of the tables the data agent owns, and how they map to the API types.
 
@@ -22,6 +23,7 @@ export interface MessageDb {
 export interface TaskDb {
   id: number; status: string; role: string; person: string | null; title: string; body: string; issue_id: number | null;
   object_type: string | null; object_id: string | null; created_by: string; created_at: string; done_at: string | null;
+  risk_id?: number | null; decision_id?: number | null; due_at?: string | null; closed_reason?: string | null;
 }
 
 export function toIssue(r: IssueDb): Issue {
@@ -50,6 +52,9 @@ export function toTask(r: TaskDb): Task {
   return {
     id: r.id, status: r.status === "done" ? "done" : "open", role: r.role, person: r.person, title: r.title, body: r.body,
     issue_id: r.issue_id, object, created_by: r.created_by as Actor, created_at: r.created_at, done_at: r.done_at,
+    risk_id: r.risk_id ?? null, decision_id: r.decision_id ?? null, due_at: r.due_at ?? null, closed_reason: r.closed_reason ?? null,
+    // Only a question goes stale. A task that carries out a decision stays where it is until the decision is finished.
+    stale: r.status !== "done" && !r.decision_id && Boolean(r.due_at) && new Date(r.due_at!).getTime() < now().getTime(),
   };
 }
 

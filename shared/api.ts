@@ -321,6 +321,11 @@ export interface Task {
   created_by: Actor;
   created_at: string;
   done_at: string | null;
+  risk_id: number | null;       // the risk it was asked for
+  decision_id: number | null;   // set when the task carries out an approved decision
+  due_at: string | null;        // ISO: by when the answer is needed
+  stale: boolean;               // an open question whose deadline has passed. It drops down the list.
+  closed_reason: string | null; // why the system closed it, when no person did
 }
 
 export interface EventRow {

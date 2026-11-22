@@ -6,6 +6,7 @@ import { llmAvailable, obj, prompt, runAgent, str, withStyle } from "../../llm.t
 import type { Tool } from "../../llm.ts";
 import { sendMessage } from "../../mail/transport.ts";
 import { knowledgeTools } from "./knowledge.ts";
+import { putTask } from "../../tasks.ts";
 import { assigneeFor, loadApprovalRules, loadRoles, replyBy } from "./people.ts";
 import { sayDate } from "./rows.ts";
 import type { IssueDb, MessageDb } from "./rows.ts";
@@ -88,10 +89,11 @@ export async function clarify(opts: { runId: string }): Promise<ClarifyResult> {
         const body = who.note ? `${a.body.trim()}\n\n${who.note}` : a.body.trim();
         const id = tx(() => {
           const existing = tasks.get(who.role);
+          // Within a round everything for one role goes into one task. Across rounds, a request about the same
+          // lot, order or shipment goes into the task that person already has open (see putTask).
           const tid = existing
             ? (run("UPDATE tasks SET body = body || ? WHERE id = ?", `\n\n${a.title.trim()}\n${body}`, existing), existing)
-            : run("INSERT INTO tasks (status, role, person, title, body, issue_id, object_type, object_id, created_by, created_at) VALUES ('open', ?, ?, ?, ?, ?, ?, ?, 'data_agent', ?)",
-                who.role, who.person, a.title.trim(), body, first.id, first.object_type, first.object_id, stamp).lastId;
+            : putTask({ role: who.role, person: who.person, title: a.title, body, issue_id: first.id, object_type: first.object_type, object_id: first.object_id, created_by: "data_agent", due_at: by }).id;
           for (const i of ok) run("UPDATE issues SET status = 'asked', addressee = 'internal', assignee_role = ?, updated_at = ? WHERE id = ?", who.role, stamp, i);
           return tid;
         });

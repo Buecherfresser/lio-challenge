@@ -4,6 +4,7 @@ import { now, nowIso } from "../clock.ts";
 import { logEvent } from "../events.ts";
 import { fmtTime, settings } from "../compute/settings.ts";
 import { loadSnapshot } from "../compute/state.ts";
+import { putTask } from "../tasks.ts";
 import { runDataAgent } from "./data/index.ts";
 import { assigneeFor, loadRoles, replyBy } from "./data/people.ts";
 import type { IssueDb } from "./data/rows.ts";
@@ -139,8 +140,9 @@ function askColleague(a: AskInput, text: string, subject: string, runId: string)
   const by = new Date(Math.min(now().getTime() + settings.answerHours * 3_600_000, loadSnapshot().deadline)).toISOString();
   const id = tx(() => {
     const body = [text, a.background?.trim(), who.note, `Please answer by ${say(by)}.`].filter(Boolean).join("\n\n");
-    const taskId = run("INSERT INTO tasks (status, role, person, title, body, issue_id, object_type, object_id, created_by, created_at) VALUES ('open', ?, ?, ?, ?, NULL, ?, ?, 'action_agent', ?)",
-      who.role, who.person, subject, body, a.object_type ?? (a.part_id ? "part" : null), a.object_id ?? a.part_id ?? null, nowIso()).lastId;
+    // If this person already has an open task about the same thing, the question is added to it.
+    const taskId = putTask({ role: who.role, person: who.person, title: subject, body, object_type: a.object_type ?? (a.part_id ? "part" : null), object_id: a.object_id ?? a.part_id ?? null,
+      created_by: "action_agent", risk_id: a.risk_id, due_at: by }).id;
     return run(
       `INSERT INTO questions (risk_id, recipient, role, person, topic, object_type, object_id, part_id, text, background, answer_by, status, task_id, dedupe_key, created_at, sent_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?, ?)`,

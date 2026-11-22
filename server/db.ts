@@ -123,7 +123,11 @@ CREATE TABLE IF NOT EXISTS tasks (
   issue_id INTEGER,
   object_type TEXT, object_id TEXT,
   created_by TEXT NOT NULL,
-  created_at TEXT NOT NULL, done_at TEXT
+  created_at TEXT NOT NULL, done_at TEXT,
+  risk_id INTEGER,                   -- the risk it was asked for
+  decision_id INTEGER,               -- set when the task carries out an approved decision
+  due_at TEXT,                       -- ISO: by when the answer is needed
+  closed_reason TEXT                 -- why the system closed it, when no person did
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -260,6 +264,7 @@ for (const [column, decl] of [
   ["stage", "TEXT NOT NULL DEFAULT 'proposed'"], ["auto", "INTEGER NOT NULL DEFAULT 0"], ["check_at", "TEXT"], ["closed_reason", "TEXT"],
 ] as const) addColumn("decisions", column, decl);
 addColumn("questions", "issue_id", "INTEGER");
+for (const [column, decl] of [["risk_id", "INTEGER"], ["decision_id", "INTEGER"], ["due_at", "TEXT"], ["closed_reason", "TEXT"]] as const) addColumn("tasks", column, decl);
 addColumn("issues", "note", "TEXT"); // "dismissed: <why>" when someone decided it needs no action
 
 type Param = string | number | bigint | null | Uint8Array;
