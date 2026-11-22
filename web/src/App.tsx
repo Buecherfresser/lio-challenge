@@ -38,6 +38,7 @@ export default function App() {
         <Route path="todo" element={<KeepQuery to="/decisions" />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route path="colleagues" element={<KeepQuery to="/tasks" />} />
+        {/* The Agents page is not in the sidebar for now. It is still there under its address. */}
         <Route path="agents" element={<AgentsPage />} />
         <Route path="approvals" element={<ApprovalsRedirect />} />
         <Route path="parts" element={<PartsPage />} />
