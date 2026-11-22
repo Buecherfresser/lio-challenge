@@ -7,6 +7,7 @@ import { LogPage } from "@/pages/log"
 import { ManagementPage } from "@/pages/management"
 import { PartsPage } from "@/pages/parts"
 import { OverviewPage } from "@/pages/overview"
+import { ColleaguesPage } from "@/pages/colleagues"
 import { TodoPage } from "@/pages/todo"
 
 /** Old links to the approvals page land on the decisions in the to-do list. */
@@ -26,6 +27,7 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path={BUYER_HOME.slice(1)} element={<OverviewPage />} />
         <Route path="todo" element={<TodoPage />} />
+        <Route path="colleagues" element={<ColleaguesPage />} />
         <Route path="approvals" element={<ApprovalsRedirect />} />
         <Route path="parts" element={<PartsPage />} />
         <Route path="parts/:part_id" element={<PartsPage />} />

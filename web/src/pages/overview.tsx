@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react"
 import { useMemo } from "react"
 import { Link, useSearchParams } from "react-router"
-import type { EditionStatus, PartRow } from "@shared/api.ts"
+import type { EditionStatus, PartRow, Task } from "@shared/api.ts"
 import { Page } from "@/components/app-layout"
 import { ObjectLink } from "@/components/object-link"
 import { ItemSheet, QueueRow } from "@/components/queue"
@@ -9,9 +9,9 @@ import { ErrorState } from "@/components/states"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Skeleton } from "@/components/ui/skeleton"
 import { shortEdition } from "@/lib/decisions"
-import { num } from "@/lib/format"
+import { dateTime, num } from "@/lib/format"
 import { byDeadline, useQueue } from "@/lib/queue"
-import { useOverview, useParts } from "@/lib/queries"
+import { useOverview, useParts, useTasks } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
 // The buyer's start page shows only what is urgent: what is due in the next hours, and one number per edition.
@@ -124,11 +124,62 @@ function MoreLink({ to, label, detail }: { to: string; label: string; detail: st
   )
 }
 
+/**
+ * Whom the agents wait for outside the dashboard: one line per colleague with their oldest open request, so a buyer
+ * knows whom to call. The full list with "Record answer" is on the Colleagues page.
+ */
+function WaitingOnColleagues({ tasks }: { tasks: Task[] }) {
+  const byPerson = new Map<string, { role: string; open: Task[] }>()
+  for (const task of tasks) {
+    if (task.dashboard || task.status !== "open") continue
+    const name = task.person ?? task.role
+    const entry = byPerson.get(name) ?? { role: task.role, open: [] }
+    entry.open.push(task)
+    byPerson.set(name, entry)
+  }
+  const people = [...byPerson.entries()]
+    .map(([name, entry]) => ({ name, role: entry.role, open: entry.open.sort((a, b) => a.created_at.localeCompare(b.created_at)) }))
+    .sort((a, b) => a.open[0].created_at.localeCompare(b.open[0].created_at))
+  if (people.length === 0) return null
+  return (
+    <section aria-label="Waiting on colleagues" className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-semibold">Waiting on colleagues</h2>
+        <Link to="/colleagues" className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          Pass on and record answers
+        </Link>
+      </div>
+      <ul className="divide-y rounded-xl border">
+        {people.slice(0, 4).map((person) => (
+          <li key={person.name}>
+            <Link
+              to="/colleagues"
+              className="flex items-center gap-3 px-4 py-3 text-sm outline-none hover:bg-muted/40 focus-visible:bg-muted/40"
+            >
+              <span className="w-40 shrink-0 truncate font-medium" title={person.role}>
+                {person.name}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                {person.open[0].title}
+                {person.open.length > 1 && ` and ${num(person.open.length - 1)} more`}
+              </span>
+              <span className="hidden shrink-0 text-xs text-muted-foreground tabular-nums sm:block">
+                since {dateTime(person.open[0].created_at)}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 const plural = (n: number, one: string, many: string) => `${num(n)} ${n === 1 ? one : many}`
 
 export function OverviewPage() {
   const overview = useOverview()
   const parts = useParts()
+  const tasks = useTasks()
   const { queue, threadById, productNames, now, loading } = useQueue()
   const [searchParams, setSearchParams] = useSearchParams()
   const openKey = searchParams.get("item")
@@ -190,6 +241,8 @@ export function OverviewPage() {
             ))
           )}
         </section>
+
+        <WaitingOnColleagues tasks={tasks.data ?? []} />
 
         <section aria-label="More" className="grid gap-3 sm:grid-cols-3">
           <MoreLink

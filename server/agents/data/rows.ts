@@ -22,6 +22,13 @@ export interface MessageDb {
 export interface TaskDb {
   id: number; status: string; role: string; person: string | null; title: string; body: string; issue_id: number | null;
   object_type: string | null; object_id: string | null; created_by: string; created_at: string; done_at: string | null;
+  answer?: string | null; // what the colleague said, as a buyer recorded it
+}
+
+/** Whether people in this role work in the dashboard (DASHBOARD_ROLES). Their tasks go to the To do list. */
+export function usesDashboard(roleTitle: string | null | undefined): boolean {
+  const title = (roleTitle ?? "").toLowerCase();
+  return config.dashboardRoles.some((r) => title.includes(r));
 }
 
 export function toIssue(r: IssueDb): Issue {
@@ -50,6 +57,7 @@ export function toTask(r: TaskDb): Task {
   return {
     id: r.id, status: r.status === "done" ? "done" : "open", role: r.role, person: r.person, title: r.title, body: r.body,
     issue_id: r.issue_id, object, created_by: r.created_by as Actor, created_at: r.created_at, done_at: r.done_at,
+    answer: r.answer ?? null, dashboard: usesDashboard(r.role),
   };
 }
 

@@ -71,7 +71,7 @@ export interface Overview {
   top_risks: Risk[];
   agent_work?: AgentWork[];   // open risks the action agent has in hand
   value_at_risk_eur?: number | null; // lost copies times what a copy is worth, null if no value is configured
-  counts: { open_issues: number; open_tasks: number; needs_approval_mails: number; pending_decisions: number; parts_at_risk: number };
+  counts: { open_issues: number; open_tasks: number; colleague_tasks: number; needs_approval_mails: number; pending_decisions: number; parts_at_risk: number };
   last_sync: { at: string; snapshot_id: number; added: number; changed: number; removed: number; source: "live" | "replay" | "import" } | null;
   mode: { source: "live" | "replay"; mail: "outbox" | "live"; llm: boolean };
 }
@@ -321,6 +321,8 @@ export interface Task {
   created_by: Actor;
   created_at: string;
   done_at: string | null;
+  answer: string | null;      // what the colleague said, as someone recorded it in the dashboard
+  dashboard: boolean;         // the role works in the dashboard (To do). False: warehouse, logistics, quality and the like
 }
 
 export interface EventRow {

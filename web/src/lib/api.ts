@@ -104,6 +104,7 @@ export const api = {
   discardMessage: (id: number) => post<Message>(`/api/messages/${id}/reject`),
   tasks: () => get<Task[]>("/api/tasks?status=all"),
   taskDone: (id: number) => post<Task>(`/api/tasks/${id}/done`),
+  taskAnswer: (id: number, answer: string) => post<Task>(`/api/tasks/${id}/answer`, { answer, by: "Someone in procurement" }),
   events: (filter: EventFilter, limit: number, beforeId: number | null) =>
     get<EventRow[]>(
       `/api/events${query({

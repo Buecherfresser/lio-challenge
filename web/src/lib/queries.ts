@@ -65,5 +65,7 @@ export const useSendMessage = () =>
   useAction(({ id, body }: { id: number; body: string }) => api.sendMessage(id, body))
 export const useDiscardMessage = () => useAction((id: number) => api.discardMessage(id))
 export const useTaskDone = () => useAction((id: number) => api.taskDone(id))
+export const useTaskAnswer = () =>
+  useAction(({ id, answer }: { id: number; answer: string }) => api.taskAnswer(id, answer))
 export const useRunAll = () => useAction(() => api.runAll())
 export const useReplayNext = () => useAction(() => api.replayNext())

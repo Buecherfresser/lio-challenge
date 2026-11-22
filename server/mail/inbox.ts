@@ -74,6 +74,26 @@ export function recordInbound(input: { supplier_id: string; subject: string; bod
   return toMessage(row);
 }
 
+/**
+ * A colleague's answer that someone typed into the dashboard, for people who never open it (warehouse, logistics,
+ * quality). It is stored like a received mail in that person's thread, so the data agent reads it like any other reply.
+ */
+export function recordColleagueReply(input: { person: string; subject: string; body: string; by: string }): Message {
+  const body = String(input.body ?? "").replace(/\r\n/g, "\n").trim();
+  if (!body) throw new Error("The answer has no text.");
+  const id = run(
+    `INSERT INTO messages (thread_id, direction, status, from_addr, to_addr, subject, language, body_original, body_en, supplier_id, person, created_by, issue_ids, external_id, processed, created_at, sent_at)
+     VALUES (?, 'in', 'received', ?, ?, ?, 'en', ?, ?, NULL, ?, 'human', '[]', ?, 0, ?, ?)`,
+    `person:${input.person}`, input.person, config.mail.from || "procurement@localhost", input.subject.trim() || "(no subject)", body, body, input.person,
+    `colleague-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, nowIso(), nowIso()).lastId;
+  logEvent({
+    actor: "human", action: "mail.received", object: { type: "message", id: String(id), label: input.subject },
+    summary: `${input.by} recorded what ${input.person} answered: "${input.subject}".`,
+    input: { via: "dashboard", person: input.person, by: input.by }, output: { message_id: id, thread_id: `person:${input.person}`, characters: body.length },
+  });
+  return toMessage(get<MessageDb>("SELECT * FROM messages WHERE id = ?", id)!);
+}
+
 let saidNotConfigured = false;
 let polling = false;
 

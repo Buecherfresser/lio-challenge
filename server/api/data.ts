@@ -7,7 +7,7 @@ import { llmAvailable } from "../llm.ts";
 import { runDataAgent } from "../agents/data/index.ts";
 import { toIssue, toMessage, toTask } from "../agents/data/rows.ts";
 import type { IssueDb, MessageDb, TaskDb } from "../agents/data/rows.ts";
-import { recordInbound } from "../mail/inbox.ts";
+import { recordColleagueReply, recordInbound } from "../mail/inbox.ts";
 import { loadMessage, sendMessage } from "../mail/transport.ts";
 
 // The part of the HTTP API that belongs to the data agent: mail threads and messages, tasks, issues,
@@ -141,6 +141,29 @@ dataApi.post("/tasks/:id/done", async (c) => {
     });
     logEvent({ actor: "human", action: "task.done", object: t.object_type && t.object_id ? { type: toTask(t).object!.type, id: t.object_id } : null, summary: `${by === "human" ? "Someone" : by} marked the task "${t.title}" as done.`, input: { task_id: id, by, note: text(b.note) ?? null }, output: { issue_id: t.issue_id } });
   }
+  return c.json(toTask(get<TaskDb>("SELECT * FROM tasks WHERE id = ?", id)!));
+});
+
+// A colleague without the dashboard answered (by phone, Teams, in person). Someone records it here: the task is done,
+// the answer is kept on it for the agents, and it goes into the person's thread for the data agent to read.
+dataApi.post("/tasks/:id/answer", async (c) => {
+  const id = Number(c.req.param("id"));
+  const b = await body(c);
+  const by = text(b.by) ?? "Someone";
+  const answer = text(b.answer);
+  if (!answer) return c.json({ error: "The answer has no text." }, 400);
+  const t = get<TaskDb>("SELECT * FROM tasks WHERE id = ?", id);
+  if (!t) return c.json({ error: "There is no such task." }, 404);
+  const person = t.person ?? t.role;
+  const message = recordColleagueReply({ person, subject: `Re: ${t.title}`, body: answer, by });
+  tx(() => {
+    run("UPDATE tasks SET status = 'done', done_at = COALESCE(done_at, ?), answer = ? WHERE id = ?", nowIso(), answer, id);
+    if (t.issue_id !== null) run("UPDATE issues SET status = 'answered', updated_at = ? WHERE id = ? AND status = 'asked'", nowIso(), t.issue_id);
+  });
+  logEvent({ actor: "human", action: "task.answered", object: t.object_type && t.object_id ? { type: toTask(t).object!.type, id: t.object_id } : null,
+    summary: `${by} recorded ${person}'s answer to "${t.title}": ${answer.slice(0, 200)}`, input: { task_id: id, by, answer }, output: { message_id: message.id, issue_id: t.issue_id } });
+  // Read it right away, as with a pasted supplier reply.
+  if (llmAvailable()) void runDataAgent({ mailsOnly: true }).catch(() => undefined);
   return c.json(toTask(get<TaskDb>("SELECT * FROM tasks WHERE id = ?", id)!));
 });
 

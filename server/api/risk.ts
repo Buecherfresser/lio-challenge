@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Overview } from "../../shared/api.ts";
 import { config } from "../config.ts";
-import { get, json, kv } from "../db.ts";
+import { all, get, json, kv } from "../db.ts";
 import { hoursBetween, packingHoursLeft } from "../clock.ts";
 import { llmAvailable } from "../llm.ts";
 import { settings } from "../compute/settings.ts";
@@ -15,6 +15,7 @@ import { approvalFor, APPROVAL_KINDS } from "../compute/approval.ts";
 import type { ApprovalKind } from "../compute/approval.ts";
 import { agentWork, decide } from "../agents/action.ts";
 import { questionRows, toAgentQuestion } from "../agents/questions.ts";
+import { usesDashboard } from "../agents/data/rows.ts";
 import { currentSettings, saveSettings, valueOf } from "../compute/value.ts";
 
 // Routes for the launch view: copies per edition, the supply map, parts, risks and decision cards.
@@ -29,6 +30,7 @@ function overview(): Overview {
   return memo(snap, "api.overview", () => {
     const now = new Date(snap.now);
     const parts = partRows(snap);
+    const openTaskRoles = all<{ role: string }>("SELECT role FROM tasks WHERE status = 'open'").map((t) => t.role);
     return {
       now: now.toISOString(),
       deadline: config.deadline,
@@ -41,7 +43,8 @@ function overview(): Overview {
       value_at_risk_eur: valueOf(editions(snap).map((e) => ({ product_id: e.product_id, copies: e.lost }))),
       counts: {
         open_issues: count("SELECT COUNT(*) AS n FROM issues WHERE status != 'resolved'"),
-        open_tasks: count("SELECT COUNT(*) AS n FROM tasks WHERE status = 'open'"),
+        open_tasks: openTaskRoles.filter((r) => usesDashboard(r)).length,
+        colleague_tasks: openTaskRoles.filter((r) => !usesDashboard(r)).length,
         needs_approval_mails: count("SELECT COUNT(*) AS n FROM messages WHERE status = 'needs_approval'"),
         pending_decisions: count("SELECT COUNT(*) AS n FROM decisions WHERE status = 'pending'"),
         parts_at_risk: parts.filter((p) => p.status !== "ok").length,

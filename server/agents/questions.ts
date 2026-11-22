@@ -55,7 +55,10 @@ function answerOfIssue(issueId: number): string | null {
 }
 function answerText(q: QuestionDb): string | null {
   if (q.issue_id) return answerOfIssue(q.issue_id);
-  if (q.task_id && q.status === "answered") return "The colleague marked the task as done.";
+  if (q.task_id && q.status === "answered") {
+    const answer = get<{ answer: string | null }>("SELECT answer FROM tasks WHERE id = ?", q.task_id)?.answer;
+    return answer ? `The colleague answered: ${answer.slice(0, 1500)}` : "The colleague marked the task as done.";
+  }
   return null;
 }
 

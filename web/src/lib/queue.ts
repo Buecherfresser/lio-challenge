@@ -101,6 +101,8 @@ export function buildQueue(
   }
 
   for (const task of tasks) {
+    // Tasks for people who never open the dashboard (warehouse, logistics, quality) are listed under Colleagues.
+    if (!task.dashboard) continue
     items.push({
       key: `task-${task.id}`,
       kind: "task",

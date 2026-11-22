@@ -113,6 +113,11 @@ export const config = {
     sendOnApproval: bool("SEND_ON_APPROVAL", true),
   },
 
+  // Roles that work in the dashboard. A role counts if its title contains one of these. Everyone else (warehouse,
+  // logistics, quality) never opens it: their tasks are listed apart, for a buyer to pass on and to record the answer.
+  dashboardRoles: env("DASHBOARD_ROLES", "Head of Procurement,Chief Procurement Officer,CPO,Buyer,Category Lead")
+    .split(",").map((x) => x.trim().toLowerCase()).filter(Boolean),
+
   // Approval notices: a short mail to whoever signs a decision next. For the hackathon all of them go to one address.
   notify: {
     to: env("NOTIFY_EMAIL"),

@@ -260,6 +260,7 @@ for (const [column, decl] of [
   ["stage", "TEXT NOT NULL DEFAULT 'proposed'"], ["auto", "INTEGER NOT NULL DEFAULT 0"], ["check_at", "TEXT"], ["closed_reason", "TEXT"],
 ] as const) addColumn("decisions", column, decl);
 addColumn("questions", "issue_id", "INTEGER");
+addColumn("tasks", "answer", "TEXT"); // what the colleague said, recorded by someone in the dashboard
 addColumn("issues", "note", "TEXT"); // "dismissed: <why>" when someone decided it needs no action
 
 type Param = string | number | bigint | null | Uint8Array;
