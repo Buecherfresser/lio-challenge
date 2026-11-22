@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { shortEdition } from "@/lib/decisions"
 import { dateTime, num } from "@/lib/format"
 import { byDeadline, useQueue } from "@/lib/queue"
-import { useCases, useOverview, useParts, useTasks } from "@/lib/queries"
+import { useOverview, useParts, useTasks } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
 // The buyer's start page shows only what is urgent: what is due in the next hours, and one number per edition.
@@ -197,9 +197,6 @@ export function OverviewPage() {
   const lostParts = (parts.data ?? []).filter((part) => part.status === "lost").length
   const uncertainParts = (parts.data ?? []).filter((part) => part.status === "uncertain").length
   const agentWork = (overview.data?.agent_work ?? []).filter((item) => item.state !== "waiting_person").length
-  const cases = useCases()
-  const casesSolved = (cases.data?.cases ?? []).filter((item) => item.state === "solved").length
-  const casesOpen = (cases.data?.cases.length ?? 0) - casesSolved
 
   function setItem(key: string | null) {
     setSearchParams(
@@ -263,15 +260,9 @@ export function OverviewPage() {
             }
           />
           <MoreLink
-            to="/agents"
+            to="/log?actor=action_agent"
             label="Agents"
-            detail={
-              casesOpen + casesSolved > 0
-                ? `${plural(casesOpen, "case", "cases")} in hand, ${num(casesSolved)} solved`
-                : agentWork > 0
-                  ? `${plural(agentWork, "risk", "risks")} handled on their own`
-                  : "Nothing in hand"
-            }
+            detail={agentWork > 0 ? `${plural(agentWork, "risk", "risks")} handled on their own` : "Nothing in hand"}
           />
         </section>
       </div>
