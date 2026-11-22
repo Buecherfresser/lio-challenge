@@ -261,6 +261,13 @@ for (const [column, decl] of [
 ] as const) addColumn("decisions", column, decl);
 addColumn("questions", "issue_id", "INTEGER");
 addColumn("tasks", "answer", "TEXT"); // what the colleague said, recorded by someone in the dashboard
+{
+  // Every new task is mailed to its person once. Tasks from before this column existed count as told, so the first
+  // start after the change does not send a mail for each of them.
+  const had = (db.prepare("PRAGMA table_info(tasks)").all() as { name: string }[]).some((c) => c.name === "notified_at");
+  addColumn("tasks", "notified_at", "TEXT");
+  if (!had) db.exec("UPDATE tasks SET notified_at = created_at WHERE notified_at IS NULL");
+}
 addColumn("issues", "note", "TEXT"); // "dismissed: <why>" when someone decided it needs no action
 
 type Param = string | number | bigint | null | Uint8Array;

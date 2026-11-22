@@ -1,4 +1,5 @@
 import { config } from "./config.ts";
+import { notifyNewTasks } from "./mail/notify.ts";
 import { all, get, kv } from "./db.ts";
 import { logEvent, newRunId, totalSpendUsd } from "./events.ts";
 import { nowIso } from "./clock.ts";
@@ -67,9 +68,9 @@ export async function runSync(advanceReplay = false): Promise<SyncResult | null>
 
 const pendingDocs = () => pendingCount();
 
-export async function runData() { return step("data_agent", async () => { await pollInbox(); return runDataAgent({ limit: DOCS_PER_CYCLE }); }); }
+export async function runData() { return step("data_agent", async () => { await pollInbox(); const r = await runDataAgent({ limit: DOCS_PER_CYCLE }); await notifyNewTasks(); return r; }); }
 export async function runRisk(force = false) { return step("risk_agent", () => runRiskAgent({ force })); }
-export async function runAction() { return step("action_agent", async () => { recomputeDecisions(); return runActionAgent(); }); }
+export async function runAction() { return step("action_agent", async () => { recomputeDecisions(); const r = await runActionAgent(); await notifyNewTasks(); return r; }); }
 
 let cycling = false;
 let again = false;

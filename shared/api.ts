@@ -322,7 +322,8 @@ export interface Task {
   created_at: string;
   done_at: string | null;
   answer: string | null;      // what the colleague said, as someone recorded it in the dashboard
-  dashboard: boolean;         // the role works in the dashboard (To do). False: warehouse, logistics, quality and the like
+  dashboard: boolean;         // the role works in the dashboard. False: warehouse, logistics, quality and the like
+  notified_at: string | null; // when the person was told about the task by mail
 }
 
 export interface EventRow {

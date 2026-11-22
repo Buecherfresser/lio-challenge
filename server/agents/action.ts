@@ -22,7 +22,7 @@ import { logger, readTools } from "./tools.ts";
 import { TOPICS, askQuestion, contactCounts, flushQuestions, questionSignature, questionsForAgent, refreshQuestions, threadForAgent, waitingOn } from "./questions.ts";
 import type { AskInput } from "./questions.ts";
 import { assigneeFor, loadRoles } from "./data/people.ts";
-import { notifyNextSigner } from "../mail/notify.ts";
+import { notifyNewTasks, notifyNextSigner } from "../mail/notify.ts";
 
 // The action agent. One agent works through one risk: it finds the way out, asks what is missing, lets the code check
 // whether it pays, and hands a decision with a short report to the right person. Then it follows through.
@@ -326,6 +326,8 @@ export async function decide(id: number, verdict: "approved" | "rejected", by: s
     }
   });
   const out = await carryOut(id, opts.auto ? "action_agent" : by, sigs);
+  // A colleague who got the decision as a task hears about it right away.
+  void notifyNewTasks();
   if (out.sent) run("UPDATE decisions SET stage = 'ordered', check_at = ? WHERE id = ?", new Date(now().getTime() + settings.answerHours * 3_600_000).toISOString(), id);
   planChanged();
   logEvent({ actor, action: opts.auto ? "decision.carried_out" : "decision.approved", object,
