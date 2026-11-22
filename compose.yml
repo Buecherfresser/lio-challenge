@@ -17,3 +17,17 @@ services:
       # Loopback only. Public HTTPS for procurement.jonasdrechsel.com is the host Caddy in /opt/core.
       - "127.0.0.1:8101:8080"
     mem_limit: 1g
+
+  # Claude Code behind an OpenAI-style endpoint, for testing and development (claude-bridge/). It only starts with
+  # COMPOSE_PROFILES=claude in .env. The app uses it with LLM_PROVIDER=claude-code. Reachable only from the app.
+  claude:
+    build: ./claude-bridge
+    image: lineguard-claude:latest
+    profiles: [claude]
+    restart: always
+    environment:
+      CLAUDE_CONCURRENCY: ${CLAUDE_CONCURRENCY:-3}
+    volumes:
+      # The Claude login and settings (owned by uid 1000)
+      - ./claude-home:/home/node
+    mem_limit: 2g

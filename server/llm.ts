@@ -5,14 +5,28 @@ import { config } from "./config.ts";
 import { totalSpendUsd } from "./events.ts";
 import type { ToolCallTrace } from "../shared/api.ts";
 
-// One place for every OpenAI call: Structured Outputs for reading, tool calling for the agents,
+// One place for every model call: Structured Outputs for reading, tool calling for the agents,
 // image and PDF input for scans. Returns token counts and cost so every call can be logged.
+// LLM_PROVIDER picks who answers: the OpenAI API, or Claude Code through claude-bridge/ (same API, no OpenAI credit).
 
-export const llmAvailable = () => Boolean(config.openai.apiKey);
+const claudeCode = () => config.llmProvider === "claude-code";
+export const llmAvailable = () => claudeCode() || Boolean(config.openai.apiKey);
 
 let client: OpenAI | null = null;
 // OPENAI_BASE_URL (read by the SDK itself), OPENAI_TIMEOUT_MS and OPENAI_MAX_RETRIES let the same code talk to a stand-in endpoint.
-const openai = () => (client ??= new OpenAI({ apiKey: config.openai.apiKey, maxRetries: Number(process.env.OPENAI_MAX_RETRIES ?? 4), timeout: Number(process.env.OPENAI_TIMEOUT_MS ?? 120_000) }));
+const openai = () => (client ??= claudeCode()
+  ? new OpenAI({ apiKey: "claude-code", baseURL: config.claudeCode.url, maxRetries: 1, timeout: config.claudeCode.timeoutMs })
+  : new OpenAI({ apiKey: config.openai.apiKey, maxRetries: Number(process.env.OPENAI_MAX_RETRIES ?? 4), timeout: Number(process.env.OPENAI_TIMEOUT_MS ?? 120_000) }));
+
+/** With Claude Code every call goes to the one model set for it, whatever model the caller asked for. */
+const modelFor = (requested: string) => (claudeCode() ? config.claudeCode.model || requested : requested);
+/** The name a call is logged under. Claude Code runs on the account, so it costs no OpenAI credit. */
+const loggedModel = (requested: string) => (claudeCode() ? `claude-code:${config.claudeCode.model || "default"}` : requested);
+
+/** The bridge reports a failed run as a failed response. The OpenAI SDK does not throw for it, so we do. */
+function failed(resp: { status?: string | null; error?: { message?: string } | null }): void {
+  if (resp.status === "failed") throw new Error(`The model call failed: ${resp.error?.message ?? "no reason given"}`);
+}
 
 export interface Usage { model: string; tokens_in: number; tokens_out: number; cost_usd: number }
 
@@ -27,7 +41,7 @@ export const addUsage = (a: Usage, b: Usage): Usage => ({ model: a.model, tokens
 let active = 0;
 const waiting: (() => void)[] = [];
 async function slot<T>(fn: () => Promise<T>): Promise<T> {
-  if (config.openai.budgetUsd > 0 && totalSpendUsd() >= config.openai.budgetUsd) {
+  if (!claudeCode() && config.openai.budgetUsd > 0 && totalSpendUsd() >= config.openai.budgetUsd) {
     throw new Error(`The OpenAI budget of ${config.openai.budgetUsd} USD is used up (OPENAI_BUDGET_USD). No more model calls.`);
   }
   if (active >= config.openai.concurrency) await new Promise<void>((r) => waiting.push(r));
@@ -81,14 +95,15 @@ export async function structured<T>(a: StructuredArgs): Promise<{ data: T; usage
   if (!llmAvailable()) throw new Error("OPENAI_API_KEY is not set.");
   const parts: Part[] = typeof a.user === "string" ? [{ type: "text", text: a.user }] : a.user;
   const resp = await slot(() => openai().responses.create({
-    model: a.model,
+    model: modelFor(a.model),
     instructions: a.system,
     input: [{ role: "user", content: toContent(parts) }],
     text: { format: { type: "json_schema", name: a.schemaName, schema: a.schema, strict: true } },
   }));
+  failed(resp);
   const text = resp.output_text;
   if (!text) throw new Error(`Model returned no output (status ${resp.status}).`);
-  return { data: JSON.parse(text) as T, usage: usageOf(a.model, resp.usage) };
+  return { data: JSON.parse(text) as T, usage: usageOf(loggedModel(a.model), resp.usage) };
 }
 
 export interface Tool {
@@ -118,18 +133,19 @@ export async function runAgent(a: AgentArgs): Promise<{ text: string; trace: Too
   const tools = a.tools.map((t) => ({ type: "function" as const, name: t.name, description: t.description, parameters: t.parameters, strict: true }));
   const byName = new Map(a.tools.map((t) => [t.name, t]));
   const trace: ToolCallTrace[] = [];
-  let usage: Usage = { model: a.model, tokens_in: 0, tokens_out: 0, cost_usd: 0 };
+  let usage: Usage = { model: loggedModel(a.model), tokens_in: 0, tokens_out: 0, cost_usd: 0 };
   let input: any = [{ role: "user", content: typeof a.user === "string" ? a.user : toContent(a.user) }];
   let previous: string | undefined;
   const max = a.maxSteps ?? 24;
 
   for (let step = 1; step <= max; step++) {
     const resp = await slot(() => openai().responses.create({
-      model: a.model, instructions: a.system, input, tools, previous_response_id: previous,
+      model: modelFor(a.model), instructions: a.system, input, tools, previous_response_id: previous,
       // On the last step the model has to wrap up with what it has.
       tool_choice: step === max ? "none" : "auto",
     }));
-    usage = addUsage(usage, usageOf(a.model, resp.usage));
+    failed(resp);
+    usage = addUsage(usage, usageOf(loggedModel(a.model), resp.usage));
     previous = resp.id;
     const calls = resp.output.filter((o) => o.type === "function_call");
     if (!calls.length) return { text: resp.output_text ?? "", trace, usage, steps: step };

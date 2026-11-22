@@ -6,7 +6,7 @@ set -eu
 APP=/opt/lineguard
 BK=/root/lineguard-deploy-backups
 cd "$APP"
-mkdir -p "$BK" data && chown 1000:1000 data
+mkdir -p "$BK" data claude-home && chown 1000:1000 data claude-home
 if ls data/app.db >/dev/null 2>&1; then
   tar czf "$BK/db-$(date +%Y%m%d-%H%M%S).tgz" data/app.db*
   ls -1t "$BK"/db-*.tgz | tail -n +21 | xargs -r rm --        # keep the last 20 automatic backups
@@ -17,7 +17,7 @@ tar -x -C "$tmp"
 for f in package.json package-lock.json tsconfig.json Dockerfile compose.yml .dockerignore; do
   [ -e "$tmp/$f" ] && cp "$tmp/$f" "$APP/$f"
 done
-for d in server shared prompts web .claude; do
+for d in server shared prompts web .claude claude-bridge; do
   [ -d "$tmp/$d" ] || continue
   rm -rf "$APP/$d.new" && cp -r "$tmp/$d" "$APP/$d.new" && rm -rf "$APP/$d" && mv "$APP/$d.new" "$APP/$d"
 done

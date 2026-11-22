@@ -24,5 +24,5 @@ jobs:
           printf '%s\n' "$KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
           printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
           git archive HEAD package.json package-lock.json tsconfig.json Dockerfile compose.yml .dockerignore \
-              server shared prompts web .claude/skills deploy \
+              server shared prompts web .claude/skills deploy claude-bridge \
             | ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes root@178.104.40.53

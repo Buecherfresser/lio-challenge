@@ -74,6 +74,16 @@ export const config = {
   // A shipment that is on its way and has had no tracking update for this many hours is stale.
   trackingMaxAgeHours: parseMap(env("TRACKING_MAX_AGE_HOURS", "sea=36,air=8,road=6")),
 
+  // Which model answers: "openai" (the OpenAI API) or "claude-code" (`claude -p` through claude-bridge/, for testing).
+  llmProvider: (env("LLM_PROVIDER", "openai") === "claude-code" ? "claude-code" : "openai") as "openai" | "claude-code",
+  claudeCode: {
+    // The bridge container, reachable from the app under its compose name.
+    url: env("CLAUDE_CODE_URL", "http://claude:8790/v1"),
+    // Model for every call: an alias (sonnet, opus, haiku) or a full model name. Empty = the account's default.
+    model: env("CLAUDE_CODE_MODEL", "sonnet"),
+    timeoutMs: num("CLAUDE_CODE_TIMEOUT_MS", 900_000),
+  },
+
   openai: {
     apiKey: env("OPENAI_API_KEY"),
     modelExtract: env("OPENAI_MODEL_EXTRACT", "gpt-6-luna"),
