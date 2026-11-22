@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { PRODUCT_NAME } from "@/lib/config"
-import { nextSigner, shortEdition, signatureList } from "@/lib/decisions"
+import { decisionReach, nextSigner, shortEdition, signatureList } from "@/lib/decisions"
 import { MESSAGE_STATUS_LABEL, dateTime, eur, num } from "@/lib/format"
 import { useApproveDecision, useRejectDecision, useSaveSettings, useSettings } from "@/lib/queries"
 import { cn } from "@/lib/utils"
@@ -146,6 +146,24 @@ function Actions({ decision }: { decision: DecisionCard }) {
   const open = signatures.filter((signature) => !signature.signed_by)
   const several = decision.signatures.length > 1
   const next = open[0]
+  const reach = decisionReach(decision)
+  const doer = decision.mail_draft?.person ?? null
+  const last = open.length <= 1
+
+  const label =
+    several && next && !last
+      ? `Sign as ${next.person ?? next.role}`
+      : reach === "external"
+        ? "Approve and send"
+        : reach === "handover"
+          ? `Approve and hand to ${doer}`
+          : "Confirm"
+  const hint =
+    reach === "self"
+      ? `Internal step. Nothing leaves Soony: the signature confirms that ${next?.person ?? "the signer"} does it.`
+      : reach === "handover"
+        ? `Internal step. Nothing leaves Soony: ${doer} gets it as a task.`
+        : null
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -155,17 +173,14 @@ function Actions({ decision }: { decision: DecisionCard }) {
           disabled={approve.isPending}
           onClick={() => approve.mutate({ id: decision.id, by: next?.person ?? undefined })}
         >
-          {several && next
-            ? `Sign as ${next.person ?? next.role}`
-            : decision.mail_draft
-              ? "Approve and send"
-              : "Approve"}
+          {label}
         </Button>
         <Button variant="outline" disabled={approve.isPending} onClick={() => setRejecting(true)}>
           Reject
         </Button>
         {approve.isError && <span className="text-xs text-muted-foreground">That did not work. Try again.</span>}
       </div>
+      {hint && !several && <p className="min-w-0 flex-1 text-xs text-muted-foreground sm:text-right">{hint}</p>}
       {/* One signer is named in the figures above. Several signers are listed here, with who has signed. */}
       {several && (
         <div className="min-w-0 flex-1 text-xs text-muted-foreground sm:text-right">
@@ -185,6 +200,15 @@ function Actions({ decision }: { decision: DecisionCard }) {
   )
 }
 
+/** The stage in words. An internal step has no mail out, so "ordered" means handed over or confirmed by signing. */
+function stageLabel(decision: DecisionCard): string {
+  if (decision.stage !== "ordered") return STAGE_LABEL[decision.stage]
+  const reach = decisionReach(decision)
+  if (reach === "self") return "Confirmed by signing, waiting for it to show in the data"
+  if (reach === "handover") return `Handed to ${decision.mail_draft?.person} as a task, waiting for it to show in the data`
+  return STAGE_LABEL.ordered
+}
+
 function Outcome({ decision }: { decision: DecisionCard }) {
   return (
     <div className="space-y-1 text-sm">
@@ -201,7 +225,7 @@ function Outcome({ decision }: { decision: DecisionCard }) {
         <span className="text-muted-foreground">
           {decision.decided_by && !decision.auto && decision.stage !== "withdrawn" && ` by ${decision.decided_by}`}
           {decision.decided_at && ` · ${dateTime(decision.decided_at)}`}
-          {decision.status === "approved" && ` · ${STAGE_LABEL[decision.stage]}`}
+          {decision.status === "approved" && ` · ${stageLabel(decision)}`}
         </span>
       </p>
       {decision.decision_reason && <p className="max-w-3xl text-muted-foreground">{decision.decision_reason}</p>}
@@ -360,7 +384,19 @@ export function DecisionDetail({
           </Fold>
         )}
         {draft && (
-          <Fold title={pending ? "The mail that goes out when you approve" : "The mail"}>
+          <Fold
+            title={
+              draft.supplier_id
+                ? pending
+                  ? "The mail that goes out when you approve"
+                  : "The mail"
+                : decisionReach(decision) === "self"
+                  ? "What the signature confirms"
+                  : pending
+                    ? `The task ${draft.person ?? "a colleague"} gets when you approve`
+                    : `The task for ${draft.person ?? "a colleague"}`
+            }
+          >
             <div className="space-y-3">
               <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
                 <dt className="text-muted-foreground">To</dt>
