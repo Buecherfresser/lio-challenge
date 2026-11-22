@@ -255,7 +255,7 @@ export interface CaseStep {
 export interface AgentCase {
   key: string;                // "risk:12" or "check:40"
   kind: "risk" | "check";
-  internal: boolean;          // only colleagues at the customer were asked: no supplier was written to and nothing waits for a signature
+  internal: boolean;          // everything stayed inside the company: colleagues were asked or given a task, no supplier was written to, nothing waits for a signature
   state: CaseState;
   change: string;             // the four phrases of the chain
   impact: string;
