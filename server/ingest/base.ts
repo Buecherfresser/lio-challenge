@@ -6,6 +6,8 @@ import { parseDate, parseNumber } from "../vocab.ts";
 import { addFact } from "../facts.ts";
 import { logEvent } from "../events.ts";
 import type { ObjectType } from "../../shared/api.ts";
+import { portal } from "../adapters/index.ts";
+import type { BaseTable } from "../adapters/index.ts";
 
 // Base data: master data, purchase orders (both exports unified), goods receipts, stock, shipments, pack-out log.
 // Loaded by code. Column names are matched through aliases because the exports differ and change.
@@ -14,45 +16,47 @@ import type { ObjectType } from "../../shared/api.ts";
 
 type Kind = "text" | "number" | "int" | "date" | "datetime" | "bool" | "list";
 interface Col { name: string; kind: Kind; required?: boolean; aliases?: string[] }
-interface Spec { table: string; match: RegExp; cols: Col[]; describe: string }
+interface Spec { table: BaseTable; match: RegExp; cols: Col[]; describe: string }
 
 const c = (name: string, kind: Kind = "text", required = false, ...aliases: string[]): Col => ({ name, kind, required, aliases });
 
-export const SPECS: Spec[] = [
-  { table: "components", match: /^soony\/master\/components\.csv$/i, describe: "component master", cols: [
+// Which file fills a table comes from the portal adapter of the customer (server/adapters).
+const COLUMNS: Omit<Spec, "match">[] = [
+  { table: "components", describe: "component master", cols: [
     c("part_id", "text", true, "component_id", "material_id", "matnr"), c("description"), c("category"), c("uom"), c("abc_class"), c("critical", "bool"), c("drawing_rev") ] },
-  { table: "products", match: /^soony\/master\/products\.csv$/i, describe: "finished products", cols: [
+  { table: "products", describe: "finished products", cols: [
     c("product_id", "text", true), c("name"), c("product_line"), c("lifecycle"), c("launch_date", "date"), c("plan_weekly_units", "number"), c("std_cost_eur", "number") ] },
-  { table: "bom", match: /^soony\/master\/bom\.csv$/i, describe: "bill of materials", cols: [
+  { table: "bom", describe: "bill of materials", cols: [
     c("parent_id", "text", true, "product_id"), c("child_id", "text", true, "component_id"), c("qty_per", "number", true, "quantity", "qty"), c("valid_from", "date"), c("valid_to", "date") ] },
-  { table: "routes", match: /^soony\/master\/routes\.csv$/i, describe: "transport routes", cols: [
+  { table: "routes", describe: "transport routes", cols: [
     c("route_id", "text", true), c("origin"), c("destination"), c("mode"), c("carrier_id"), c("transit_days", "number"), c("via") ] },
-  { table: "carriers", match: /^soony\/master\/logistics_providers\.csv$/i, describe: "logistics providers", cols: [
+  { table: "carriers", describe: "logistics providers", cols: [
     c("carrier_id", "text", true), c("name"), c("city"), c("country"), c("modes") ] },
-  { table: "ports", match: /^soony\/master\/ports\.csv$/i, describe: "ports and airports", cols: [
+  { table: "ports", describe: "ports and airports", cols: [
     c("locode", "text", true), c("name"), c("country"), c("lat", "number"), c("lon", "number"), c("mode") ] },
-  { table: "sites", match: /^soony\/master\/sites\.csv$/i, describe: "Soony sites", cols: [
+  { table: "sites", describe: "the customer's sites", cols: [
     c("site_id", "text", true), c("name"), c("operator"), c("type"), c("country"), c("city"), c("lat", "number"), c("lon", "number") ] },
-  { table: "suppliers", match: /^suppliers\/[^/]+\/profile\.csv$/i, describe: "supplier profile", cols: [
+  { table: "suppliers", describe: "supplier profile", cols: [
     c("supplier_id", "text", true), c("name"), c("legal_name"), c("category"), c("country"), c("city"), c("lat", "number"), c("lon", "number"), c("currency"), c("payment_terms"), c("incoterm"),
     c("supplier_since", "date"), c("status"), c("qualification_status"), c("contact_name"), c("contact_email"), c("phone"), c("language", "text", false, "preferred_language"), c("notes") ] },
-  { table: "supplier_parts", match: /^suppliers\/[^/]+\/components\.csv$/i, describe: "parts a supplier delivers", cols: [
+  { table: "supplier_parts", describe: "parts a supplier delivers", cols: [
     c("part_id", "text", true, "component_id"), c("share", "number"), c("unit_price", "number"), c("currency"), c("lead_time_days", "number"), c("moq", "number"), c("is_primary", "bool", false, "primary"), c("note") ] },
-  { table: "po_lines", match: /^soony\/erp\/purchase_orders[^/]*\.csv$/i, describe: "purchase order lines", cols: [
+  { table: "po_lines", describe: "purchase order lines", cols: [
     c("po_number", "text", true, "ebeln"), c("po_line", "int", true, "ebelp"), c("supplier_id", "text", true, "lifnr"), c("part_id", "text", true, "material_id", "matnr"), c("plant", "text", false, "werks"),
     c("quantity", "number", true, "menge"), c("unit_price", "number", false, "netpr"), c("currency", "text", false, "waers"), c("order_date", "date", false, "bedat"), c("requested_date", "date", false, "eindt"),
     c("promised_date", "date", false, "zzconf"), c("actual_delivery_date", "date", false, "wedat"), c("status", "text", false, "zzstat"), c("buyer", "text", false, "ernam"), c("incoterm"), c("note") ] },
-  { table: "goods_receipts", match: /^soony\/erp\/goods_receipts[^/]*\.csv$/i, describe: "goods receipts", cols: [
+  { table: "goods_receipts", describe: "goods receipts", cols: [
     c("gr_number", "text", true), c("gr_date", "date"), c("po_number"), c("po_line", "int"), c("supplier_id"), c("part_id", "text", true, "material_id"), c("plant"),
     c("qty_ordered", "number"), c("qty_received", "number", true), c("delivery_note"), c("inspector"), c("remark") ] },
-  { table: "stock", match: /^soony\/erp\/stock_snapshot[^/]*\.csv$/i, describe: "stock snapshot", cols: [
+  { table: "stock", describe: "stock snapshot", cols: [
     c("snapshot_date", "date"), c("site"), c("material_id", "text", true, "part_id", "component_id"), c("batch"), c("quantity", "number", true), c("uom"), c("safety_stock", "number"), c("weeks_of_cover", "number"), c("last_count", "date") ] },
-  { table: "shipments", match: /^soony\/erp\/open_shipments[^/]*\.csv$/i, describe: "open shipments", cols: [
+  { table: "shipments", describe: "open shipments", cols: [
     c("shipment_id", "text", true), c("carrier_id"), c("mode"), c("reference"), c("supplier_id"), c("po_numbers", "list"), c("part_ids", "list", false, "material_ids"), c("route_id"), c("origin"), c("destination"), c("via"),
     c("dest_site"), c("etd", "date"), c("eta", "date"), c("status"), c("last_lat", "number"), c("last_lon", "number"), c("updated_at", "datetime"), c("note") ] },
-  { table: "packout", match: /^soony\/erp\/packout_log[^/]*\.csv$/i, describe: "pack-out log", cols: [
+  { table: "packout", describe: "pack-out log", cols: [
     c("date", "date", true), c("site"), c("product_id", "text", true), c("line"), c("units_packed", "number", true) ] },
 ];
+export const SPECS: Spec[] = COLUMNS.map((spec) => ({ ...spec, match: portal.files[spec.table] }));
 
 export const specFor = (path: string): Spec | null => SPECS.find((s) => s.match.test(path)) ?? null;
 /** Known tabular base files are loaded by code, everything else is read by the data agent. */
@@ -157,8 +161,8 @@ export function loadBase(): BaseLoadResult {
 
 function insertRow(table: string, row: Record<string, unknown>, doc: DocRow, allRows: Record<string, unknown>[]) {
   const r = { ...row };
-  if (table === "suppliers") r.folder = doc.path.split("/").slice(0, 2).join("/");
-  if (table === "supplier_parts") r.supplier_id = doc.path.match(/SUP-\d+/)?.[0] ?? null;
+  if (table === "suppliers") r.folder = portal.supplierFolder(doc.path);
+  if (table === "supplier_parts") r.supplier_id = portal.supplierIdInPath(doc.path);
   if (table === "po_lines") {
     r.po_line = lineNo(r.po_line as number | null, allRows);
     r.supplier_id = supplierId(r.supplier_id as string | null);
@@ -178,11 +182,13 @@ function lineNo(n: number | null, allRows: Record<string, unknown>[]): number | 
   return tens ? n / 10 : n;
 }
 export const normalizeLineNo = (n: number): number => (n >= 10 && n % 10 === 0 ? n / 10 : n);
-const supplierId = (s: string | null): string | null => (s && /^\d+$/.test(s) ? `SUP-${s.padStart(4, "0")}` : s);
+const supplierId = (s: string | null): string | null => portal.supplierIdFromErp(s);
 const normStatus = (s: string | null): string | null => (s ? (STATUS_CODES[s.toLowerCase()] ?? s.toLowerCase().replace(/\s+/g, "_")) : s);
 
 function emitFacts(table: string, rows: Record<string, unknown>[], doc: DocRow): number {
   let n = 0;
+  // A finished product is whatever the product master lists (loaded before the stock in the same pass).
+  const products = table === "stock" ? new Set(all<{ product_id: string }>("SELECT product_id FROM products").map((p) => p.product_id)) : new Set<string>();
   const put = (object_type: ObjectType, object_id: string, field: string, value: unknown, extra: { unit?: string | null; part_id?: string | null; observed_at?: string | null } = {}) => {
     if (value === null || value === undefined || value === "") return;
     const r = addFact({ object_type, object_id, field, value: String(value), unit: extra.unit ?? null, part_id: extra.part_id ?? null,
@@ -218,7 +224,7 @@ function emitFacts(table: string, rows: Record<string, unknown>[], doc: DocRow):
       }
       case "stock": {
         const m = r.material_id as string; const at = (r.snapshot_date as string | null) ?? doc.seen_at;
-        if (m.startsWith("FG-")) put("product", m, "packed", r.quantity, { observed_at: at });
+        if (products.has(m)) put("product", m, "packed", r.quantity, { observed_at: at });
         else if (r.batch) put("lot", r.batch as string, "stock_qty", r.quantity, { part_id: m, observed_at: at });
         break;
       }
@@ -233,7 +239,7 @@ function emitFacts(table: string, rows: Record<string, unknown>[], doc: DocRow):
   }
   if (table === "stock") {
     const sums = new Map<string, { q: number; at: string | null }>();
-    for (const r of rows) { const m = r.material_id as string; if (m.startsWith("FG-")) continue; const s = sums.get(m) ?? { q: 0, at: r.snapshot_date as string | null }; s.q += (r.quantity as number) ?? 0; sums.set(m, s); }
+    for (const r of rows) { const m = r.material_id as string; if (products.has(m)) continue; const s = sums.get(m) ?? { q: 0, at: r.snapshot_date as string | null }; s.q += (r.quantity as number) ?? 0; sums.set(m, s); }
     for (const [m, s] of sums) put("part", m, "stock_qty", s.q, { observed_at: s.at ?? doc.seen_at });
   }
   return n;

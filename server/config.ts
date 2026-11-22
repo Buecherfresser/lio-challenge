@@ -66,6 +66,8 @@ export const config = {
 
   // Who the product works for. The rest of what the agents know about the customer is in prompts/customer.md.
   customer: { name: env("CUSTOMER_NAME", "the customer"), timezone: env("TIMEZONE", "Europe/Berlin") },
+  // How the customer's supplier portal is laid out (see server/adapters). One adapter per customer.
+  portalAdapter: env("PORTAL_ADAPTER", "soony"),
   deadline: new Date(env("DEADLINE", "2026-11-22T20:00:00+01:00")).toISOString(),
   shifts: parseShifts(env("SHIFTS", "2026-11-21T06:00:00+01:00/2026-11-21T22:00:00+01:00,2026-11-22T06:00:00+01:00/2026-11-22T20:00:00+01:00")),
   fixedNow: env("NOW") ? new Date(env("NOW")).toISOString() : null,
