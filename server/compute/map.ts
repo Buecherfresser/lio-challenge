@@ -156,12 +156,17 @@ function places(snap: Snapshot): Places {
     const packout = count("SELECT site AS k, COUNT(*) AS n FROM packout GROUP BY site");
     const inbound = count("SELECT dest_site AS k, COUNT(*) AS n FROM shipments GROUP BY dest_site");
     const named = (m: Map<string, number>, s: (typeof sites)[number]) => [s.site_id, s.name, s.city].reduce((a, x) => a + (x ? (m.get(codeKey(x)) ?? 0) : 0), 0);
-    const score = (s: (typeof sites)[number]) => [/distribution|\bdc\b|fulfil|warehouse|hub|pack/i.test(s.type ?? "") ? 1 : 0, named(packout, s), named(inbound, s), /hamburg/i.test(`${s.city} ${s.name}`) ? 1 : 0];
+    const score = (s: (typeof sites)[number]) => [/distribution|\bdc\b|fulfil|warehouse|hub|pack/i.test(s.type ?? "") ? 1 : 0, named(packout, s), named(inbound, s)];
     const ranked = sites.filter((s) => ok(s.lat, s.lon)).map((s) => ({ s, k: score(s) })).filter((x) => x.k.some((v) => v > 0))
       .sort((a, b) => { for (let i = 0; i < a.k.length; i++) if (a.k[i] !== b.k[i]) return b.k[i] - a.k[i]; return a.s.site_id.localeCompare(b.s.site_id); });
     const top = ranked[0]?.s;
     const hub: GeoPoint = top ? { lat: top.lat!, lon: top.lon!, name: top.name ?? top.site_id, kind: "hub", code: top.site_id }
-      : { lat: 53.5511, lon: 9.9937, name: "Distribution center Hamburg", kind: "hub", code: null };
+      : (() => {
+        // No site with coordinates: put the hub where most shipments are headed, if that place is known.
+        const dest = all<{ k: string | null }>("SELECT destination AS k FROM shipments WHERE destination IS NOT NULL GROUP BY destination ORDER BY COUNT(*) DESC LIMIT 1")[0]?.k;
+        const at = dest ? list.find((p) => p.codes.includes(codeKey(dest)) || p.names.includes(words(dest)) || p.cities.includes(words(dest))) : undefined;
+        return { lat: at?.lat ?? 0, lon: at?.lon ?? 0, name: "Distribution center", kind: "hub", code: null } as GeoPoint;
+      })();
     for (const p of list) if (p.source === "site" && p.code === hub.code) p.kind = "hub";
     return { list, hub, hubSite: top?.site_id ?? null };
   });

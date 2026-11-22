@@ -27,9 +27,9 @@ export const VOCAB: Partial<Record<ObjectType, { id: string; fields: Record<stri
   po_line: {
     id: "<order number>/<line number>. Line numbers are 1, 2, 3 (supplier item 00010 = line 1, 00020 = line 2).",
     fields: {
-      qty_ordered: f("number", "quantity Soony ordered"),
+      qty_ordered: f("number", "quantity the customer ordered"),
       unit_price: f("number", "price per unit on the order (unit = currency)"),
-      requested_date: f("date", "delivery date Soony asked for"),
+      requested_date: f("date", "delivery date the customer asked for"),
       promised_date: f("date", "delivery date held in the ERP as promised", true, moves),
       actual_delivery_date: f("date", "date the line was delivered"),
       erp_status: f("text", "order status in the ERP: open, delivered, cancelled, awaiting_approval", true, movingCode),
@@ -41,14 +41,14 @@ export const VOCAB: Partial<Record<ObjectType, { id: string; fields: Record<stri
       shipped_qty: f("number", "quantity the supplier says has left", true, moves),
       shipped_date: f("date", "date it left the supplier", true, moves),
       balance_qty: f("number", "quantity still owed after a partial shipment", true, moves),
-      balance_eta: f("date", "date the supplier names for the rest to arrive at Soony", true, moves),
+      balance_eta: f("date", "date the supplier names for the rest to arrive at the customer", true, moves),
       received_qty: f("number", "quantity booked at goods receipt", true, moves),
       artwork_rev: f("text", "revision of the artwork or drawing the supplier produced to", true, movingRev),
       note: f("text", "anything else the document says about this line", false),
     },
   },
   shipment: {
-    id: "Soony shipment id. If the document only has a container or air waybill number, use that; it is resolved to the shipment.",
+    id: "The customer's shipment id. If the document only has a container or air waybill number, use that; it is resolved to the shipment.",
     fields: {
       qty: f("number", "units of one part on this shipment (set part_id)", true, moves),
       revision: f("text", "revision of the part loaded on this shipment (set part_id)", true, rev),
@@ -62,7 +62,7 @@ export const VOCAB: Partial<Record<ObjectType, { id: string; fields: Record<stri
     },
   },
   part: {
-    id: "Soony component id.",
+    id: "The customer's component id.",
     fields: {
       stock_qty: f("number", "total stock at the distribution center", true, moves),
       drawing_rev: f("text", "current released revision of the part", true, movingRev),
@@ -93,7 +93,7 @@ export const VOCAB: Partial<Record<ObjectType, { id: string; fields: Record<stri
     },
   },
   supplier: {
-    id: "Soony supplier id.",
+    id: "The customer's supplier id.",
     fields: {
       status: f("text", "status in the vendor master: active, watch, at_risk, blocked", true, movingCode),
       qualification_status: f("text", "qualified or conditional", true, movingCode),
@@ -112,7 +112,7 @@ export const VOCAB: Partial<Record<ObjectType, { id: string; fields: Record<stri
     },
   },
   product: {
-    id: "Soony product id.",
+    id: "The customer's product id.",
     fields: {
       day_one_demand: f("number", "copies needed on launch day"),
       packed: f("number", "copies packed so far", true, moves),

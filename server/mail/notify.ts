@@ -41,7 +41,7 @@ function text(d: DecisionCard, person: string, role: string): { subject: string;
     "",
     `Hackathon note: this notice is meant for ${person} (${role}) and goes to ${config.notify.to} instead.`,
     "",
-    "Soony Procurement",
+    config.mail.fromName,
   ].join("\n");
   return { subject: `Approval needed${due ? ` by ${fmtTime(due)}` : ""}: ${d.title}`, body };
 }
@@ -126,7 +126,7 @@ export async function notifyNewTasks(): Promise<number> {
         "",
         `Hackathon note: this mail is meant for ${person} (${t.role}) and goes to ${config.notify.to} instead.`,
         "",
-        "Soony Procurement",
+        config.mail.fromName,
       ].join("\n");
       const object = { type: "task" as const, id: String(t.id), label: t.title };
       try {

@@ -1,4 +1,5 @@
 import type { ObjectRef } from "../../../shared/api.ts";
+import { portal } from "../../adapters/index.ts";
 import { config } from "../../config.ts";
 import { all, get, tx } from "../../db.ts";
 import { logEvent } from "../../events.ts";
@@ -69,7 +70,7 @@ export function readingOrder(docs: DocRow[]): DocRow[] {
   const rank = (d: DocRow): number => {
     const p = d.path.toLowerCase(), b = base(p);
     if (d.version > 1 || d.sync_id > firstSync) return 0;
-    if (/^soony\/(context|news|logistics|master)\//.test(p) || p.includes("/notices/")) return 1;
+    if (portal.readFirst.test(p) || p.includes("/notices/")) return 1;
     if (!p.includes("/receiving/") && /(ship|advice|pack|^pl[_\-.]|asn|dispatch|despatch|awb|waybill|lading)/.test(b)) return 2;
     if (p.includes("/order_confirmations/") && (d.path.match(/\d{8,}/g) ?? []).some((n) => openOrders.has(n))) return 3;
     if (p.includes("/receiving/")) return 4;

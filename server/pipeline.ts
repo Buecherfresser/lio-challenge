@@ -120,6 +120,7 @@ export function status(): Status {
   const count = (s: string) => q.find((x) => x.status === s)?.n ?? 0;
   return {
     now: nowIso(),
+    customer: { name: config.customer.name, timezone: config.customer.timezone },
     running: { ...running },
     queue: { documents_pending: count("pending"), documents_done: count("done"), documents_failed: count("failed") },
     last_sync: lastSync(),

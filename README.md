@@ -121,6 +121,7 @@ node server/cli.ts import-folder ../soony-data
 |---|---|
 | `server/sync` | Sync, snapshots, replay |
 | `server/ingest` | Loaders for the base tables |
+| `server/adapters` | One adapter per customer portal: which file fills which table, where supplier folders are, how ids are written. `soony.ts` is Soony's, `PORTAL_ADAPTER` picks one |
 | `server/agents` | Data agent, risk agent, action agent (`action.ts`), its questions (`questions.ts`) and the read tools the agents share (`tools.ts`) |
 | `server/history.ts` | Recording of moments and reading the dashboard at an earlier one |
 | `server/compute` | The tools that count: parts, copies per edition, what-if, supplier reliability, approvals, the value of copies and what waiting costs (`value.ts`) |

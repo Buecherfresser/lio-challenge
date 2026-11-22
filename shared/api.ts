@@ -390,6 +390,7 @@ export interface EventRow {
 
 export interface Status {
   now: string;
+  customer: { name: string; timezone: string }; // CUSTOMER_NAME and TIMEZONE, so the dashboard shows local times
   running: { sync: boolean; data_agent: boolean; risk_agent: boolean; action_agent: boolean };
   queue: { documents_pending: number; documents_done: number; documents_failed: number };
   last_sync: Overview["last_sync"];

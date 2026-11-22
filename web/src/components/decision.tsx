@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { PRODUCT_NAME } from "@/lib/config"
+import { CUSTOMER, PRODUCT_NAME } from "@/lib/config"
 import { decisionReach, nextSigner, shortEdition, signatureList } from "@/lib/decisions"
 import { MESSAGE_STATUS_LABEL, dateTime, eur, num } from "@/lib/format"
 import { useApproveDecision, useRejectDecision, useSaveSettings, useSettings } from "@/lib/queries"
@@ -160,9 +160,9 @@ function Actions({ decision }: { decision: DecisionCard }) {
           : "Confirm"
   const hint =
     reach === "self"
-      ? `Internal step. Nothing leaves Soony: the signature confirms that ${next?.person ?? "the signer"} does it.`
+      ? `Internal step. Nothing leaves ${CUSTOMER.name}: the signature confirms that ${next?.person ?? "the signer"} does it.`
       : reach === "handover"
-        ? `Internal step. Nothing leaves Soony: ${doer} gets it as a task.`
+        ? `Internal step. Nothing leaves ${CUSTOMER.name}: ${doer} gets it as a task.`
         : null
 
   return (

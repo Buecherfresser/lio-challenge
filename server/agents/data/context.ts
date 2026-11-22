@@ -1,4 +1,5 @@
 import { config } from "../../config.ts";
+import { portal } from "../../adapters/index.ts";
 import { all, get } from "../../db.ts";
 import { now } from "../../clock.ts";
 import { key } from "./resolve.ts";
@@ -18,11 +19,11 @@ const list = (s: string | null) => { try { return (JSON.parse(s ?? "[]") as stri
 
 /** Supplier a portal path belongs to, from its folder. */
 export function supplierOfPath(path: string): string | null {
-  const folder = path.split("/").slice(0, 2).join("/");
-  if (!path.startsWith("suppliers/")) return null;
+  const folder = portal.supplierFolder(path);
+  if (!folder) return null;
   const byFolder = get<{ supplier_id: string }>("SELECT supplier_id FROM suppliers WHERE folder = ?", folder);
   if (byFolder) return byFolder.supplier_id;
-  const id = path.match(/SUP-\d+/i)?.[0]?.toUpperCase();
+  const id = portal.supplierIdInPath(path);
   return id && get("SELECT 1 AS x FROM suppliers WHERE supplier_id = ?", id) ? id : null;
 }
 
@@ -103,7 +104,7 @@ export function buildContext(opts: { path?: string; supplierId?: string | null; 
   const grHints = opts.path ? receiptsInFileName(opts.path) : [];
   const year = now().getUTCFullYear();
   const blocks = [
-    `Now: ${now().toISOString()} (${sayDate(now().toISOString(), year)} in Hamburg). Launch deadline at the distribution center: ${config.deadline} (${sayDate(config.deadline, year)}).`,
+    `Now: ${now().toISOString()} (${sayDate(now().toISOString(), year)} local time). Launch deadline at the distribution center: ${config.deadline} (${sayDate(config.deadline, year)}).`,
     opts.seenAt ? `The file first appeared in the portal on ${opts.seenAt}.` : "",
     masterBlock(),
     // A file that belongs to known goods receipts only needs those. Everything else of Soony's own gets the open orders and shipments.

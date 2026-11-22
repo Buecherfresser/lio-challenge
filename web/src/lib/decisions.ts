@@ -24,7 +24,7 @@ export function nextSigner(decision: DecisionCard): Signature | undefined {
 /**
  * What approving a card does outside the person's own click. "external": a mail goes to a supplier. "handover": a
  * colleague gets it as a task. "self": the person who signs is the one who does it, so the signature is the step.
- * The last two never leave Soony.
+ * The last two never leave the customer.
  */
 export type DecisionReach = "external" | "handover" | "self"
 

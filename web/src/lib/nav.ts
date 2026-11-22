@@ -10,7 +10,7 @@ export const BUYER_HOME = "/buyer"
 /**
  * The pages of the buyer view, in sidebar order.
  * Overview shows only what is urgent. Decisions is what waits for a signature (and mails to release).
- * Tasks is everything the agents asked of a person at Soony, with its state. Each person gets a mail per new task.
+ * Tasks is everything the agents asked of a person at the customer, with its state. Each person gets a mail per new task.
  * Agents is what the agents took care of, one line per case: what changed, what it means, what was done, where it stands.
  * Supply is the state of every part, as a table or a map.
  * Mail is the archive of every conversation. History is what the agents did, step by step.

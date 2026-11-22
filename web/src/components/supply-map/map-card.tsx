@@ -50,7 +50,7 @@ export function ShipmentCard({ shipment: s, variant }: { shipment: MapShipment; 
       </div>
       <Facts
         rows={[
-          ["At Hamburg", dateTime(s.at_line ?? s.eta)],
+          ["At the distribution center", dateTime(s.at_line ?? s.eta)],
           ["Quantity", num(s.quantity)],
           ["Value", money(s.value, s.value_eur)],
         ]}
