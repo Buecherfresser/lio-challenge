@@ -1,6 +1,6 @@
 # 1e16
 
-**Live: https://procurement.jonasdrechsel.com** It runs on our own server in Nuremberg, Germany, and has been reading Soony's portal since Saturday.
+**Live: https://procurement.jonasdrechsel.com**
 
 **Our goal:** 1e16 finds a supply problem and starts solving it before the supplier mentions it.
 
