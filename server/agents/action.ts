@@ -239,14 +239,23 @@ export async function storeProposal(risk: Risk, p: Proposal, runId: string): Pro
   return { accepted: true, decision_id: id, copies_saved: sim.copies_saved, value_eur: value, cost_eur: cost.cost_eur, decide_by: timing.decide_by, approver: who, carried_out_without_approval: alone };
 }
 
-/** Send the mail of an approved decision. A mail to a colleague has no address and becomes a task in the dashboard. */
-async function carryOut(decisionId: number, by: string): Promise<{ sent: boolean; how: string; error: string | null }> {
+/**
+ * Send the mail of an approved decision. A mail to a colleague has no address and becomes a task in the dashboard,
+ * unless that colleague is one of the people who just signed: their signature already says they do it.
+ */
+async function carryOut(decisionId: number, by: string, sigs: Signature[] = []): Promise<{ sent: boolean; how: string; error: string | null }> {
   const mailId = decisionMailId(decisionId);
   if (!mailId) return { sent: true, how: "nothing to send", error: null };
   const m = get<{ id: number; to_addr: string; person: string | null; subject: string; body_en: string; supplier_id: string | null; status: string }>("SELECT id, to_addr, person, subject, body_en, supplier_id, status FROM messages WHERE id = ?", mailId);
   if (!m || m.status === "sent" || m.status === "outbox") return { sent: true, how: "already out", error: null };
   if (!m.supplier_id) {
     const role = [...loadRoles().values()].find((r) => r.person === m.person || r.deputy === m.person || r.role === m.person)?.role ?? m.person ?? "Procurement";
+    const same = (a: string | null | undefined) => Boolean(a && m.person && a.trim().toLowerCase() === m.person.trim().toLowerCase());
+    const signedIt = sigs.find((s) => s.signed_by && (same(s.signed_by) || same(s.person)));
+    if (signedIt) {
+      run("UPDATE messages SET status = 'outbox', sent_at = ? WHERE id = ?", nowIso(), m.id);
+      return { sent: true, how: `with the signature of ${m.person}, who does it, so no task is needed`, error: null };
+    }
     tx(() => {
       run("INSERT INTO tasks (status, role, person, title, body, issue_id, object_type, object_id, created_by, created_at) VALUES ('open', ?, ?, ?, ?, NULL, 'decision', ?, 'action_agent', ?)", role, m.person, m.subject, m.body_en, String(decisionId), nowIso());
       run("UPDATE messages SET status = 'outbox', sent_at = ? WHERE id = ?", nowIso(), m.id);
@@ -316,7 +325,7 @@ export async function decide(id: number, verdict: "approved" | "rejected", by: s
       if (s.mail_message_id) run("UPDATE messages SET status = 'rejected' WHERE id = ? AND status IN ('draft', 'needs_approval')", s.mail_message_id);
     }
   });
-  const out = await carryOut(id, opts.auto ? "action_agent" : by);
+  const out = await carryOut(id, opts.auto ? "action_agent" : by, sigs);
   if (out.sent) run("UPDATE decisions SET stage = 'ordered', check_at = ? WHERE id = ?", new Date(now().getTime() + settings.answerHours * 3_600_000).toISOString(), id);
   planChanged();
   logEvent({ actor, action: opts.auto ? "decision.carried_out" : "decision.approved", object,
