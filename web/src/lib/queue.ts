@@ -12,6 +12,8 @@ export type Kind = "decision" | "mail" | "task"
 
 export interface QueueItem {
   key: string
+  /** The number people say out loud: "#9" for decision 9, "T28" for task 28, "M40" for mail 40. */
+  ref: string
   kind: Kind
   title: string
   due: string | null
@@ -71,6 +73,7 @@ export function buildQueue(
     const signer = nextSigner(decision)
     items.push({
       key: `decision-${decision.id}`,
+      ref: `#${decision.id}`,
       kind: "decision",
       title: decision.title,
       due: decision.status === "pending" ? decision.decide_by : null,
@@ -88,6 +91,7 @@ export function buildQueue(
     if (message.decision_id !== null && pendingDecisionIds.has(message.decision_id)) continue
     items.push({
       key: `mail-${message.id}`,
+      ref: `M${message.id}`,
       kind: "mail",
       title: englishSubject(message),
       due: null,
@@ -105,6 +109,7 @@ export function buildQueue(
     if (!task.dashboard) continue
     items.push({
       key: `task-${task.id}`,
+      ref: `T${task.id}`,
       kind: "task",
       title: task.title,
       due: null,

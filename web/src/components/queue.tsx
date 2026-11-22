@@ -47,6 +47,7 @@ export function QueueRow({ item, now, onOpen }: { item: QueueItem; now: string |
       >
         {!item.done && <PriorityIcon priority={item.priority} />}
         <Icon aria-label={KIND[item.kind].label} className="size-4 shrink-0 text-muted-foreground" />
+        <span className="w-10 shrink-0 text-xs text-muted-foreground tabular-nums">{item.ref}</span>
         <span className="min-w-0 flex-1 truncate">{item.title}</span>
         {item.owner && (
           <span className="hidden w-36 shrink-0 truncate text-right text-muted-foreground md:block">{item.owner}</span>
@@ -134,7 +135,9 @@ export function ItemSheet({
                     <span aria-hidden>·</span>
                   </>
                 )}
-                <span>{KIND[item.kind].label}</span>
+                <span>
+                  {KIND[item.kind].label} {item.ref}
+                </span>
                 {item.due && !item.done && now && (
                   <>
                     <span aria-hidden>·</span>
