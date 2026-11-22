@@ -215,7 +215,7 @@
       "note": null
     },
     "mail_draft": null,
-    "created_by": "mock",
+    "created_by": "agent",
     "created_at": "2026-11-21T14:20:00Z",
     "decided_at": null,
     "decided_by": null,
@@ -278,7 +278,7 @@
       "note": null
     },
     "mail_draft": null,
-    "created_by": "mock",
+    "created_by": "agent",
     "created_at": "2026-11-21T14:20:00Z",
     "decided_at": "2026-11-21T15:30:00Z",
     "decided_by": "Mara Lindqvist",
