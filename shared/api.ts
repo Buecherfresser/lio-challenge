@@ -236,6 +236,51 @@ export interface AgentWork {
   last_at: string | null;
 }
 
+// ---- Agents page: one line per case ----
+
+/** Where a case stands. Set by code from the data, so a case never reads as solved before it is. */
+export type CaseState = "needs_you" | "waiting" | "working" | "solved" | "failed";
+
+/** One thing that happened in a case, for the list that opens under its line. */
+export interface CaseStep {
+  at: string | null;          // ISO
+  who: string;                // "Risk agent", "Paul Winter", "Karton Nowak"
+  text: string;
+}
+
+/**
+ * One case the agents worked on, as a chain: what changed, what it means, what was done, where it stands.
+ * A risk is a case. A deviation the data agent cleared up with a supplier or a colleague is a case too.
+ */
+export interface AgentCase {
+  key: string;                // "risk:12" or "check:40"
+  kind: "risk" | "check";
+  internal: boolean;          // only colleagues at the customer were asked: no supplier was written to and nothing waits for a signature
+  state: CaseState;
+  change: string;             // the four phrases of the chain
+  impact: string;
+  action: string | null;      // null = nothing was done yet
+  result: string;
+  written_by: "agent" | "code"; // code = the agent has not written this line yet, so the phrases are put together from the data
+  copies: number | null;      // copies at risk, computed by code. null for a check
+  value_eur: number | null;
+  waiting_for: string | null; // who has to move next
+  due: string | null;         // ISO: answer or decision due
+  started_at: string;
+  updated_at: string;
+  steps: CaseStep[];          // oldest first
+  risk_id: number | null;
+  decision_id: number | null; // the decision to open, if there is one
+  task_id: number | null;
+  thread_id: string | null;   // the mail thread to open, if a supplier was written to
+  part_id: string | null;
+}
+
+export interface CaseList {
+  now: string;
+  cases: AgentCase[];
+}
+
 // ---- History: the dashboard at an earlier moment ----
 
 /** The words on the time bar. A fixed list, set by code from what was logged. */

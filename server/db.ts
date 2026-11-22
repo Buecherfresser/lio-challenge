@@ -211,6 +211,16 @@ CREATE TABLE IF NOT EXISTS questions (
 CREATE INDEX IF NOT EXISTS questions_risk ON questions (risk_id, status);
 CREATE INDEX IF NOT EXISTS questions_recipient ON questions (recipient, status);
 
+-- The line of a case on the Agents page, as the agent wrote it. A line belongs to one state of its case (sig).
+-- When the case moves on, the page shows phrases put together by code until the agent has written the line again.
+CREATE TABLE IF NOT EXISTS cases (
+  key TEXT PRIMARY KEY,              -- "risk:<id>" or "check:<issue id>"
+  head_sig TEXT NOT NULL,            -- what the case is about (for change and impact)
+  sig TEXT NOT NULL,                 -- everything that happened so far (for action and result)
+  change TEXT NOT NULL, impact TEXT NOT NULL, action TEXT, result TEXT NOT NULL,
+  written_at TEXT NOT NULL
+);
+
 -- What the reading agent writes down for itself and for people. Append-only.
 CREATE TABLE IF NOT EXISTS notes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

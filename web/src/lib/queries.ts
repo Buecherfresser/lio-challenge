@@ -24,6 +24,8 @@ export const useThreadMessages = (threadId: string | null) =>
     queryFn: () => api.threadMessages(threadId!),
     enabled: Boolean(threadId),
   })
+/** The cases on the Agents page: one line per risk or data check the agents took up. */
+export const useCases = () => useQuery({ queryKey: ["cases"], queryFn: api.cases })
 export const useTasks = () => useQuery({ queryKey: ["tasks"], queryFn: api.tasks })
 
 export const useFacts = (objectType: ObjectType | undefined, objectId: string | undefined, enabled: boolean) =>

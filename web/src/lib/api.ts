@@ -1,4 +1,5 @@
 import type {
+  CaseList,
   DecisionCard,
   EventRow,
   Fact,
@@ -92,6 +93,7 @@ export const api = {
   decisions: () => get<DecisionCard[]>("/api/decisions?status=all"),
   approveDecision: (id: number, by?: string) => post<DecisionCard>(`/api/decisions/${id}/approve`, by ? { by } : {}),
   history: () => get<HistoryList>("/api/history"),
+  cases: () => get<CaseList>("/api/cases"),
   settings: () => get<Settings>("/api/settings"),
   saveSettings: (patch: Partial<Settings>) => post<Settings>("/api/settings", patch),
   rejectDecision: (id: number, reason: string) =>
