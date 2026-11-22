@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import { CUSTOMER } from "@/lib/config"
 import { dateTime, num } from "@/lib/format"
 import { useTaskAnswer, useTaskDone, useTasks } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
-// Every task the agents gave a person at Soony, with its state, grouped by person. Each person got a mail when the
+// Every task the agents gave a person at the customer, with its state, grouped by person. Each person got a mail when the
 // task was created. Whoever hears back records the answer here (the agents read it like a reply) or marks it done.
 
 interface Person {
@@ -187,7 +188,7 @@ export function TasksPage() {
     <Page>
       <div className="mx-auto max-w-5xl space-y-4">
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Everything the agents asked of someone at Soony. Each person got a mail when their task was created. When you hear
+          Everything the agents asked of someone at {CUSTOMER.name}. Each person got a mail when their task was created. When you hear
           back, record the answer, which the agents read like a reply, or mark the task done.
         </p>
 

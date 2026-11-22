@@ -1,13 +1,16 @@
 import type { Actor, FactOrigin, Message, MessageStatus, ObjectRef, ObjectType } from "@shared/api.ts"
-
-const TIME_ZONE = "Europe/Berlin"
+import { CUSTOMER } from "@/lib/config"
 
 const integer = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 })
 const euro = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })
 const percent = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 })
 
-const dateParts = new Intl.DateTimeFormat("en-GB", {
-  timeZone: TIME_ZONE,
+// Built on first use, after main.tsx has set the customer's time zone.
+let dateFormat: Intl.DateTimeFormat | null = null
+let weekdayFormat: Intl.DateTimeFormat | null = null
+const dateParts = () =>
+  (dateFormat ??= new Intl.DateTimeFormat("en-GB", {
+  timeZone: CUSTOMER.timezone,
   weekday: "short",
   day: "numeric",
   month: "short",
@@ -15,14 +18,14 @@ const dateParts = new Intl.DateTimeFormat("en-GB", {
   minute: "2-digit",
   second: "2-digit",
   hourCycle: "h23",
-})
-const longWeekday = new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, weekday: "long" })
+}))
+const longWeekday = () => (weekdayFormat ??= new Intl.DateTimeFormat("en-GB", { timeZone: CUSTOMER.timezone, weekday: "long" }))
 
 function parts(iso: string): Record<string, string> | null {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return null
   const out: Record<string, string> = {}
-  for (const part of dateParts.formatToParts(date)) out[part.type] = part.value
+  for (const part of dateParts().formatToParts(date)) out[part.type] = part.value
   return out
 }
 
@@ -74,7 +77,7 @@ export function timeWithSeconds(iso: string): string {
 export function weekdayTime(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return "n/a"
-  return `${longWeekday.format(date)} ${timeOnly(iso)}`
+  return `${longWeekday().format(date)} ${timeOnly(iso)}`
 }
 
 /** 31 h 12 min */

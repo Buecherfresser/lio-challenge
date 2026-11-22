@@ -66,7 +66,7 @@ const STATUS_COLOR: Record<MapShipment["status_class"], string> = {
 
 const STATUS_WORD: Record<MapShipment["status_class"], string> = { lost: "lost", uncertain: "early warning", safe: "safe" }
 
-/** A map of the critical supply on its way to Hamburg. Text only in tooltips and the info cards. */
+/** A map of the critical supply on its way to the distribution center. Text only in tooltips and the info cards. */
 export function SupplyMap({ map, focusPartId, variant, className }: SupplyMapProps) {
   const world = useWorld()
   const model = useMemo(() => buildModel(map), [map])
@@ -98,7 +98,7 @@ export function SupplyMap({ map, focusPartId, variant, className }: SupplyMapPro
           className="block h-auto w-full"
           style={{ aspectRatio: `${w} / ${h}` }}
           role="img"
-          aria-label="Map of critical supply on its way to Hamburg"
+          aria-label={`Map of critical supply on its way to ${map.hub.name}`}
         >
           {land && (
             <g>
