@@ -45,9 +45,6 @@ const dataDir = path.resolve(APP_DIR, env("DATA_DIR", "./data"));
 
 export const config = {
   port: num("PORT", 8787),
-  // Login for the dashboard. Empty password = no login (local use).
-  appUser: env("APP_USER", "soony"),
-  appPassword: env("APP_PASSWORD"),
   // true = nobody can change settings from the dashboard (the limit up to which the agent orders on its own, the value of a copy).
   settingsLocked: bool("SETTINGS_LOCKED"),
   dataDir,

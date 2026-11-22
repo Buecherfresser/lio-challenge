@@ -11,7 +11,7 @@ Die Schritte 1 bis 4 braucht Root-Zugang zum VPS, also macht sie Georg (oder jem
 ```sh
 # 1. Ordner, .env und Startdaten auf dem Server
 ssh vps 'mkdir -p /opt/lineguard/deploy /opt/lineguard/data && chown 1000:1000 /opt/lineguard/data'
-scp .env vps:/opt/lineguard/.env        # vorher APP_PASSWORD eintragen, siehe unten
+scp .env vps:/opt/lineguard/.env
 # optional: den lokalen Stand mitnehmen, damit der Server nicht bei null anfängt
 rsync -a data/ vps:/opt/lineguard/data/ && ssh vps 'chown -R 1000:1000 /opt/lineguard/data'
 
@@ -44,7 +44,7 @@ Pfad und Reload-Befehl in Schritt 4 hängen davon ab, wie Caddy in `/opt/core` e
 
 Der Container liest alle Einstellungen aus `/opt/lineguard/.env`, wie lokal aus `app/.env`. Zwei Dinge kommen für den Server dazu:
 
-- `APP_PASSWORD=...` schützt Dashboard und API mit einem Login (Benutzer `soony`, änderbar mit `APP_USER`). Ohne Passwort kann jeder mit dem Link Mails freigeben und OpenAI-Guthaben verbrauchen.
+- Dashboard und API sind offen, es gibt keinen Login. Jeder mit dem Link kann Entscheidungen freigeben, Mails auslösen und Modellguthaben verbrauchen. `SETTINGS_LOCKED=true` sperrt wenigstens die Einstellungen.
 - `LIO_TOKEN=...` muss drinstehen, weil der Server die Datei `lio-key.env` nicht hat.
 
 `DATA_DIR` und `PORT` setzt `compose.yml`, die Werte aus der `.env` gelten dafür nicht.

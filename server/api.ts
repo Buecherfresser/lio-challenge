@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Hono } from "hono";
-import { basicAuth } from "hono/basic-auth";
 import { HTTPException } from "hono/http-exception";
 import { config } from "./config.ts";
 import { factsById, factsOf } from "./facts.ts";
@@ -15,16 +14,15 @@ import { riskApi } from "./api/risk.ts";
 export const app = new Hono();
 
 app.onError((err, c) => {
-  if (err instanceof HTTPException) return err.getResponse(); // e.g. 401 from the login
+  if (err instanceof HTTPException) return err.getResponse();
   console.error(err);
   return c.json({ error: err.message }, 500);
 });
 
-// For the container health check. Answers without a password.
+// For the container health check.
 app.get("/healthz", (c) => c.text("ok"));
 
-// On a public server APP_PASSWORD puts the whole dashboard and API behind a login. Locally it stays open.
-if (config.appPassword) app.use("*", basicAuth({ username: config.appUser, password: config.appPassword }));
+// The dashboard and the API are open: whoever has the address can look and act. There is no login.
 
 const api = new Hono();
 
