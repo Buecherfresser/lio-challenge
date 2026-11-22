@@ -102,6 +102,9 @@ function riskCase(r: RiskDb): Built {
 
   const shown = pending ?? flying ?? done ?? failed ?? ds[ds.length - 1];
   const supplierAsked = qs.find((q) => q.supplier_id);
+  // A decision reaches a supplier when its mail is addressed to one. A rejected or withdrawn one never left.
+  const decisionGoesOutside = ds.some((d) => d.status !== "rejected" && d.mail_message_id !== null
+    && Boolean(get<{ supplier_id: string | null }>("SELECT supplier_id FROM messages WHERE id = ?", d.mail_message_id)?.supplier_id));
   const byProduct = json<{ product_id: string; copies: number }[]>(r.copies_by_product, []);
   const value = valueOf(byProduct);
   const last = steps[steps.length - 1]?.at ?? r.created_at;
@@ -115,8 +118,9 @@ function riskCase(r: RiskDb): Built {
   return {
     base: {
       key: `risk:${r.id}`, kind: "risk",
-      // Internal: all that happened is a question or a task for a colleague.
-      internal: ds.length === 0 && !supplierAsked && qs.length > 0,
+      // Internal: everything stayed inside the company. Colleagues were asked or given a task, no supplier was written
+      // to, and no decision of this case writes to one. A case that waits for a signature always stays in the main list.
+      internal: state !== "needs_you" && !supplierAsked && !decisionGoesOutside && (qs.length > 0 || ds.length > 0),
       state, copies: r.copies_at_risk, value_eur: value, waiting_for: waitingFor, due,
       started_at: r.created_at, updated_at: last, steps,
       risk_id: r.id, decision_id: shown?.id ?? null, task_id: tasks.find((t) => t.status === "open")?.id ?? null,
