@@ -41,7 +41,7 @@ function Figure({ label, value, children }: { label: string; value: ReactNode; c
   return (
     <div className="min-w-0 px-3 py-2.5">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-0.5 truncate text-lg leading-6 font-semibold tracking-tight tabular-nums">{value}</div>
+      <div className="mt-0.5 text-lg leading-6 font-semibold tracking-tight break-words tabular-nums">{value}</div>
       {children && <div className="mt-0.5 space-y-0.5 text-xs text-muted-foreground">{children}</div>}
     </div>
   )

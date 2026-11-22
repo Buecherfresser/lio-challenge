@@ -6,13 +6,13 @@ import { DraftEditor } from "@/components/draft-editor"
 import { ObjectLink } from "@/components/object-link"
 import { PriorityIcon } from "@/components/priority"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ACTOR_LABEL, dateTime, relativeDue, urgency } from "@/lib/format"
 import { KIND, PRIORITY, type QueueItem } from "@/lib/queue"
 import { useTaskDone } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
-// One line per item that waits for a person, and the side panel that opens on a click.
+// One line per item that waits for a person, and the dialog that opens on a click.
 // Colour sits only on the priority bars and on a deadline under two hours (as text).
 
 export function Due({ due, now, className }: { due: string; now: string; className?: string }) {
@@ -59,7 +59,7 @@ export function QueueRow({ item, now, onOpen }: { item: QueueItem; now: string |
   )
 }
 
-// ---- The side panel ----
+// ---- The dialog ----
 
 function MailDetail({ message, threadTitle }: { message: Message; threadTitle: string | undefined }) {
   return (
@@ -120,11 +120,12 @@ export function ItemSheet({
   threadTitle: string | undefined
 }) {
   return (
-    <Sheet open={Boolean(item)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="gap-0 overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-[720px]">
+    <Dialog open={Boolean(item)} onOpenChange={(open) => !open && onClose()}>
+      {/* Centred, and as wide as the screen allows up to a comfortable reading width, so figures and dates fit. */}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-3xl lg:max-w-5xl">
         {item && (
           <>
-            <SheetHeader className="gap-1 pr-12">
+            <DialogHeader className="gap-1 px-6 pt-6 pb-4 pr-14">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 {!item.done && (
                   <>
@@ -141,19 +142,19 @@ export function ItemSheet({
                   </>
                 )}
               </div>
-              <SheetTitle className="text-lg leading-snug">{item.title}</SheetTitle>
-              <SheetDescription>
+              <DialogTitle className="text-lg leading-snug">{item.title}</DialogTitle>
+              <DialogDescription>
                 {item.owner ? `${item.owner}, ${item.ownerRole}` : (item.ownerRole ?? "Anyone on the team can send it")}
-              </SheetDescription>
-            </SheetHeader>
-            <div className="px-4 pb-8">
+              </DialogDescription>
+            </DialogHeader>
+            <div className="px-6 pb-8">
               {item.decision && <DecisionDetail decision={item.decision} productNames={productNames} />}
               {item.message && <MailDetail message={item.message} threadTitle={threadTitle} />}
               {item.task && <TaskDetail task={item.task} />}
             </div>
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
