@@ -127,8 +127,8 @@ export function AppSidebar() {
 
   const counts = overview?.counts
   const badges: Record<string, number | undefined> = {
-    ["/todo"]: counts ? counts.pending_decisions + counts.needs_approval_mails + counts.open_tasks : undefined,
-    ["/colleagues"]: counts?.colleague_tasks,
+    ["/decisions"]: counts ? counts.pending_decisions + counts.needs_approval_mails : undefined,
+    ["/tasks"]: counts ? counts.open_tasks + counts.colleague_tasks : undefined,
   }
 
   return (

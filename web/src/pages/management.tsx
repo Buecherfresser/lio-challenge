@@ -109,7 +109,7 @@ function DecisionsLine({ count }: { count: number }) {
   if (count === 0) return null
   return (
     <Link
-      to="/todo?kind=decision"
+      to="/decisions?kind=decision"
       className="group flex items-center gap-3 self-start rounded-xl border border-decision/30 bg-decision/5 px-4 py-3 text-sm outline-none transition-colors hover:bg-decision/10 focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <span className="flex size-7 items-center justify-center rounded-full bg-decision text-xs font-semibold text-decision-foreground tabular-nums">

@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { num } from "@/lib/format"
 import { KIND, PRIORITIES, PRIORITY, byPriority, useQueue, type Kind } from "@/lib/queue"
 
-// Everything that waits for a person: decisions to sign, mails to release and tasks, nearest deadline first.
+// What waits for a signature: decisions, and mails to release, the most urgent first. Tasks have their own page.
 // One line per item. A click opens it in a side panel with its buttons at the top.
 
 const EVERYONE = "everyone"
@@ -37,7 +37,7 @@ export function TodoPage() {
 
   const kindParam = searchParams.get("kind")
   const kind: Kind | "all" =
-    kindParam === "decision" || kindParam === "mail" || kindParam === "task" ? kindParam : "all"
+    kindParam === "decision" || kindParam === "mail" ? kindParam : "all"
   const showDone = searchParams.get("show") === "done"
   const openKey = searchParams.get("item")
   const [person, setPersonState] = useState(() => searchParams.get("person") ?? readStored(PERSON_KEY) ?? EVERYONE)
@@ -82,7 +82,7 @@ export function TodoPage() {
             label="Kind"
             value={kind}
             onChange={(value) => setParam("kind", value === "all" ? null : value)}
-            options={(["all", "decision", "mail", "task"] as const).map((k) => ({
+            options={(["all", "decision", "mail"] as const).map((k) => ({
               value: k,
               label: k === "all" ? `All ${num(countOf("all"))}` : `${KIND[k].plural} ${num(countOf(k))}`,
             }))}
@@ -111,7 +111,7 @@ export function TodoPage() {
             ))}
           </div>
         ) : failed ? (
-          <ErrorState what="the to-do list" />
+          <ErrorState what="the decisions" />
         ) : visible.length === 0 ? (
           <EmptyState>
             {showDone

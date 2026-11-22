@@ -7,14 +7,21 @@ import { LogPage } from "@/pages/log"
 import { ManagementPage } from "@/pages/management"
 import { PartsPage } from "@/pages/parts"
 import { OverviewPage } from "@/pages/overview"
-import { ColleaguesPage } from "@/pages/colleagues"
+import { TasksPage } from "@/pages/tasks"
 import { TodoPage } from "@/pages/todo"
 
 /** Old links to the approvals page land on the decisions in the to-do list. */
 function ApprovalsRedirect() {
   const [searchParams] = useSearchParams()
   const done = searchParams.get("tab") === "decided"
-  return <Navigate to={`/todo?kind=decision${done ? "&show=done" : ""}`} replace />
+  return <Navigate to={`/decisions?kind=decision${done ? "&show=done" : ""}`} replace />
+}
+
+/** Old addresses (links in mails sent earlier) lead to the new pages, with their query. */
+function KeepQuery({ to }: { to: string }) {
+  const [searchParams] = useSearchParams()
+  const query = searchParams.toString()
+  return <Navigate to={query ? `${to}?${query}` : to} replace />
 }
 
 export default function App() {
@@ -26,8 +33,10 @@ export default function App() {
       </Route>
       <Route element={<AppLayout />}>
         <Route path={BUYER_HOME.slice(1)} element={<OverviewPage />} />
-        <Route path="todo" element={<TodoPage />} />
-        <Route path="colleagues" element={<ColleaguesPage />} />
+        <Route path="decisions" element={<TodoPage />} />
+        <Route path="todo" element={<KeepQuery to="/decisions" />} />
+        <Route path="tasks" element={<TasksPage />} />
+        <Route path="colleagues" element={<KeepQuery to="/tasks" />} />
         <Route path="approvals" element={<ApprovalsRedirect />} />
         <Route path="parts" element={<PartsPage />} />
         <Route path="parts/:part_id" element={<PartsPage />} />

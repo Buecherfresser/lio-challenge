@@ -3,10 +3,10 @@ import { useMemo } from "react"
 import type { DecisionCard, Message, Priority, Task, Thread } from "@shared/api.ts"
 import { nextSigner } from "@/lib/decisions"
 import { isTranslated } from "@/lib/format"
-import { useDecisions, useFolderMessages, useOverview, useTasks, useThreads } from "@/lib/queries"
+import { useDecisions, useFolderMessages, useOverview, useThreads } from "@/lib/queries"
 
-// Everything that waits for a person, as one list: decisions to sign, mails to release, tasks.
-// The overview shows the urgent part of it, the To do page all of it.
+// Everything that waits for a signature, as one list: decisions to sign and mails to release.
+// The overview shows the urgent part of it, the Decisions page all of it. Tasks have their own page.
 
 export type Kind = "decision" | "mail" | "task"
 
@@ -105,8 +105,6 @@ export function buildQueue(
   }
 
   for (const task of tasks) {
-    // Tasks for people who never open the dashboard (warehouse, logistics, quality) are listed under Colleagues.
-    if (!task.dashboard) continue
     items.push({
       key: `task-${task.id}`,
       ref: `T${task.id}`,
@@ -141,13 +139,13 @@ export function useQueue() {
   const overview = useOverview()
   const decisions = useDecisions()
   const mails = useFolderMessages("needs_approval")
-  const tasks = useTasks()
   const threads = useThreads()
 
   const now = overview.data?.now ?? null
+  // Tasks have their own page with their state. This queue is what waits for a signature or a release.
   const queue = useMemo(
-    () => buildQueue(decisions.data ?? [], mails.data ?? [], tasks.data ?? [], now),
-    [decisions.data, mails.data, tasks.data, now],
+    () => buildQueue(decisions.data ?? [], mails.data ?? [], [], now),
+    [decisions.data, mails.data, now],
   )
   const threadById = useMemo(
     () => new Map<string, Thread>((threads.data ?? []).map((t) => [t.thread_id, t])),
@@ -157,13 +155,13 @@ export function useQueue() {
     () => new Map((overview.data?.editions ?? []).map((edition) => [edition.product_id, edition.name])),
     [overview.data],
   )
-  const loading = decisions.isPending || mails.isPending || tasks.isPending
+  const loading = decisions.isPending || mails.isPending
   return {
     queue,
     threadById,
     productNames,
     now,
     loading,
-    failed: !loading && !decisions.data && !mails.data && !tasks.data,
+    failed: !loading && !decisions.data && !mails.data,
   }
 }

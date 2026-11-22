@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 // Everything else is one link away: the whole to-do list, the parts, and what the agents handle on their own.
 // "Urgent" is measured against the server clock, so the page also reads right when it shows an earlier time.
 
-/** What counts as due soon on the start page. Everything later waits on the To do page. */
+/** What counts as due soon on the start page. Everything later waits on the Decisions page. */
 const URGENT_WITHIN_MS = 24 * 3600000
 
 const SEGMENTS = [
@@ -125,13 +125,13 @@ function MoreLink({ to, label, detail }: { to: string; label: string; detail: st
 }
 
 /**
- * Whom the agents wait for outside the dashboard: one line per colleague with their oldest open request, so a buyer
- * knows whom to call. The full list with "Record answer" is on the Colleagues page.
+ * Whom the agents wait for: one line per person with their oldest open task, so a buyer knows whom to chase.
+ * The full list with every task's state is on the Tasks page.
  */
-function WaitingOnColleagues({ tasks }: { tasks: Task[] }) {
+function WaitingOnPeople({ tasks }: { tasks: Task[] }) {
   const byPerson = new Map<string, { role: string; open: Task[] }>()
   for (const task of tasks) {
-    if (task.dashboard || task.status !== "open") continue
+    if (task.status !== "open") continue
     const name = task.person ?? task.role
     const entry = byPerson.get(name) ?? { role: task.role, open: [] }
     entry.open.push(task)
@@ -142,18 +142,18 @@ function WaitingOnColleagues({ tasks }: { tasks: Task[] }) {
     .sort((a, b) => a.open[0].created_at.localeCompare(b.open[0].created_at))
   if (people.length === 0) return null
   return (
-    <section aria-label="Waiting on colleagues" className="space-y-3">
+    <section aria-label="Open tasks" className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-semibold">Waiting on colleagues</h2>
-        <Link to="/colleagues" className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-          Pass on and record answers
+        <h2 className="text-base font-semibold">Waiting on people</h2>
+        <Link to="/tasks" className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          All tasks
         </Link>
       </div>
       <ul className="divide-y rounded-xl border">
         {people.slice(0, 4).map((person) => (
           <li key={person.name}>
             <Link
-              to="/colleagues"
+              to={`/tasks?item=task-${person.open[0].id}`}
               className="flex items-center gap-3 px-4 py-3 text-sm outline-none hover:bg-muted/40 focus-visible:bg-muted/40"
             >
               <span className="w-40 shrink-0 truncate font-medium" title={person.role}>
@@ -242,13 +242,13 @@ export function OverviewPage() {
           )}
         </section>
 
-        <WaitingOnColleagues tasks={tasks.data ?? []} />
+        <WaitingOnPeople tasks={tasks.data ?? []} />
 
         <section aria-label="More" className="grid gap-3 sm:grid-cols-3">
           <MoreLink
-            to="/todo"
-            label="To do"
-            detail={`${plural(open.length, "open item", "open items")}, ${plural(decisions, "decision", "decisions")}`}
+            to="/decisions"
+            label="Decisions"
+            detail={decisions > 0 ? `${plural(decisions, "decision waits", "decisions wait")} for a signature` : "Nothing waits for a signature"}
           />
           <MoreLink
             to="/parts"
