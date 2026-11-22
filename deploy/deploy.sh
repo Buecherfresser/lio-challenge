@@ -14,7 +14,8 @@ fi
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 tar -x -C "$tmp"
 [ -f "$tmp/server/main.ts" ] && [ -f "$tmp/web/package.json" ] || { echo "incomplete upload" >&2; exit 1; }
-for f in package.json package-lock.json tsconfig.json Dockerfile compose.yml .dockerignore; do
+# HARDENED (Georg): compose.yml is NOT taken from the upload, it stays fixed on the server.
+for f in package.json package-lock.json tsconfig.json Dockerfile .dockerignore; do
   [ -e "$tmp/$f" ] && cp "$tmp/$f" "$APP/$f"
 done
 for d in server shared prompts web .claude claude-bridge; do
