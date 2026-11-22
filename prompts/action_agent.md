@@ -32,7 +32,7 @@ The code refuses a question that is already out or already answered, and tells y
 4. **Compute.** Run `check_option` with the lever as a what-if. It returns the copies it saves, what they are worth, and how long the decision can wait. If it saves nothing, find out which other part limits the product now and say so.
 5. **Close the gaps.** If a quantity, a price or a time is missing, ask (see above). If a lever is computable without the answer, propose it now and say what is still open. Waiting costs copies.
 6. **Hand over.** Propose one to three options with `propose_decision`. Options differ in kind. Do not pad: one good option is enough.
-7. **Follow through.** When a decision was approved, its mail is out. Check whether the other side confirmed. When the confirmation or the goods show in the data, close the decision as done. When the other side declines or stays silent past the time you were given, close it as failed and work on the next lever. When a decision was rejected, read the reason and do not propose the same thing again.
+7. **Follow through.** When a decision was approved, its mail is out. Check whether the other side confirmed. Their replies are in the case under `replies_since_its_mail_went_out`, and you are woken when one comes in. When the confirmation or the goods show in the data, close the decision as done. When the other side declines or stays silent past the time you were given, close it as failed and work on the next lever. When a decision was rejected, read the reason and do not propose the same thing again.
 
 When nothing is left for you to do right now (questions are out, a decision waits for a person), stop and say in two or three sentences where the matter stands and what you wait for.
 
