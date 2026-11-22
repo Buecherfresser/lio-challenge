@@ -82,6 +82,12 @@ export const config = {
     // Model for every call: an alias (sonnet, opus, haiku) or a full model name. Empty = the account's default.
     model: env("CLAUDE_CODE_MODEL", "sonnet"),
     timeoutMs: num("CLAUDE_CODE_TIMEOUT_MS", 900_000),
+    // The app serves each agent run's tools over MCP on this internal port. The claude container reaches it here.
+    mcpPort: num("CLAUDE_CODE_MCP_PORT", 8091),
+    mcpUrl: env("CLAUDE_CODE_MCP_URL", "http://app:8091/mcp"),
+    // Source files for a run go here, and the claude container sees the same folder (read-only) under filesPath.
+    filesDir: env("CLAUDE_CODE_FILES_DIR") || path.join(dataDir, "claude-files"),
+    filesPath: env("CLAUDE_CODE_FILES_PATH", "/files"),
   },
 
   openai: {

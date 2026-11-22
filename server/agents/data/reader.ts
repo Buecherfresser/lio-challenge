@@ -100,13 +100,16 @@ function sourceContent(s: Source, readable: Readable): Part[] {
   }
   const d = s.doc;
   const title = `=== Source: ${d.path} (version ${d.version}, in the portal since ${sayDate(d.seen_at, year)}) ===`;
+  // The source itself is a file part: the OpenAI API gets its content right here, Claude Code gets its name and opens it.
+  const base = d.path.split("/").pop() || "document";
   if (readable.kind === "text") {
     const text = readable.text.length > MAX_TEXT ? `${readable.text.slice(0, MAX_TEXT)}\n[cut after ${MAX_TEXT} characters]` : readable.text;
-    return [{ type: "text", text: `${head.join("\n\n")}\n\n${title}\n${text}` }];
+    const filename = /\.(txt|csv|md|json)$/i.test(base) ? base : `${base}.txt`;
+    return [{ type: "text", text: `${head.join("\n\n")}\n\n${title}` }, { type: "file", filename, mime: "text/plain", bytes: new TextEncoder().encode(text) }];
   }
-  if (readable.kind === "image") return [{ type: "text", text: `${head.join("\n\n")}\n\n${title}\nThe scanned page follows.` }, { type: "image", mime: readable.mime, bytes: readable.bytes }];
-  const filename = (d.path.split("/").pop() || "document").replace(/\.pdf.*$/i, "") + ".pdf";
-  return [{ type: "text", text: `${head.join("\n\n")}\n\n${title}\nThe scanned PDF follows (${readable.pages} pages).` }, { type: "pdf", filename, bytes: readable.bytes }];
+  if (readable.kind === "image") return [{ type: "text", text: `${head.join("\n\n")}\n\n${title}\nThe scanned page follows.` }, { type: "file", filename: base, mime: readable.mime, bytes: readable.bytes }];
+  const filename = base.replace(/\.pdf.*$/i, "") + ".pdf";
+  return [{ type: "text", text: `${head.join("\n\n")}\n\n${title}\nThe scanned PDF follows (${readable.pages} pages).` }, { type: "file", filename, mime: "application/pdf", bytes: readable.bytes }];
 }
 
 interface Finish { doc_type: string; language: string; doc_date: string | null; summary: string; body_en: string | null }

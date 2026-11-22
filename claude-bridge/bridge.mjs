@@ -7,11 +7,15 @@
 // previous_response_id. Claude gets the whole conversation as one prompt and answers with one JSON object, which
 // is checked against the schema or the tool's parameters. A wrong answer is sent back to Claude with the reason.
 //
+// It also runs whole agents (POST /v1/agent): one `claude -p` session per run, with the app's tools for that run as an
+// MCP server and the agent's own instructions as the system prompt. Claude then calls the tools natively.
+//
 // Settings (environment):
 //   PORT                 port to listen on (8790)
 //   CLAUDE_BIN           the CLI (claude)
 //   CLAUDE_ARGS          extra CLI arguments, as a JSON array (default: no built-in tools except Read, no MCP)
-//   CLAUDE_CONCURRENCY   how many `claude -p` runs at once (3)
+//   CLAUDE_CONCURRENCY   how many agent sessions at once (3), single calls have their own pool of the same size
+//   FILES_DIR            the app's source files for agent runs, shared read-only (/files)
 //   CLAUDE_TIMEOUT_MS    how long one run may take (600000)
 //   WORK_DIR             where attachments are written for Claude to read (/home/node/work)
 import http from "node:http";
@@ -22,7 +26,7 @@ import { spawn } from "node:child_process";
 
 const port = Number(process.env.PORT ?? 8790);
 const bin = process.env.CLAUDE_BIN ?? "claude";
-const extraArgs = process.env.CLAUDE_ARGS ? JSON.parse(process.env.CLAUDE_ARGS) : ["--tools", "Read", "--strict-mcp-config"];
+const extraArgs = process.env.CLAUDE_ARGS ? JSON.parse(process.env.CLAUDE_ARGS) : ["--tools", "Read", "--strict-mcp-config", "--no-session-persistence"];
 const concurrency = Number(process.env.CLAUDE_CONCURRENCY ?? 3);
 const timeoutMs = Number(process.env.CLAUDE_TIMEOUT_MS ?? 600_000);
 const work = process.env.WORK_DIR ?? path.join(process.env.HOME ?? "/tmp", "work");
@@ -102,8 +106,6 @@ function buildPrompt(body, turns, schema, tools, toolsAllowed, retryNote) {
       ? `Answer with exactly one JSON object. To call tools: {"tool_calls": [{"name": "<tool>", "arguments": {...}}]} with arguments that match the tool's parameters exactly. To finish without calling a tool: {"text": "<your final answer>"}.`
       : `Answer with exactly one JSON object: {"text": "<your answer>"}. Do not call tools.`;
   return [
-    "You are the language model behind an application. Follow the instructions below as your system prompt.",
-    `# System prompt\n${body.instructions ?? ""}`,
     tools ? `# Tools you can call\n${JSON.stringify(tools.map((t) => ({ name: t.name, description: t.description, parameters: t.parameters })))}` : "",
     `# Conversation\n${render(turns)}`,
     `# How to answer\n${how}\nOutput only the JSON object: no code fence, no text before or after it.`,
@@ -112,18 +114,29 @@ function buildPrompt(body, turns, schema, tools, toolsAllowed, retryNote) {
 }
 
 // ---- running claude -p, a few at a time ----
-let active = 0;
-const queue = [];
-async function slot(fn) {
-  if (active >= concurrency) await new Promise((r) => queue.push(r));
-  active++;
-  try { return await fn(); } finally { active--; queue.shift()?.(); }
+// Agent sessions and single calls wait in separate queues, so a tool inside an agent run can still make a single call.
+function pool(size) {
+  let active = 0;
+  const queue = [];
+  return async (fn) => {
+    if (active >= size) await new Promise((r) => queue.push(r));
+    active++;
+    try { return await fn(); } finally { active--; queue.shift()?.(); }
+  };
 }
+const slot = pool(concurrency);
+const agentSlot = pool(concurrency);
 
-function claude(prompt, model, cwd) {
+/** Run `claude -p` with the prompt on stdin and the system prompt from a file. `signal` kills the run. */
+function claude(prompt, model, cwd, system, args = extraArgs, signal = null) {
   return new Promise((resolve, reject) => {
-    const args = ["-p", "--output-format", "json", ...(model ? ["--model", model] : []), ...extraArgs];
-    const child = spawn(bin, args, { cwd, env: process.env, stdio: ["pipe", "pipe", "pipe"] });
+    fs.mkdirSync(cwd, { recursive: true });
+    const sysFile = path.join(cwd, `system-${crypto.randomUUID().slice(0, 8)}.md`);
+    fs.writeFileSync(sysFile, system || "You are a helpful assistant.");
+    const all = ["-p", "--output-format", "json", "--system-prompt-file", sysFile, ...(model ? ["--model", model] : []), ...args];
+    const child = spawn(bin, all, { cwd, env: process.env, stdio: ["pipe", "pipe", "pipe"] });
+    const kill = () => child.kill("SIGKILL");
+    signal?.addEventListener("abort", kill);
     let out = "", err = "";
     const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error(`claude -p took longer than ${timeoutMs} ms`)); }, timeoutMs);
     child.stdout.on("data", (d) => (out += d));
@@ -131,10 +144,12 @@ function claude(prompt, model, cwd) {
     child.on("error", (e) => { clearTimeout(timer); reject(e); });
     child.on("close", (code) => {
       clearTimeout(timer);
+      signal?.removeEventListener("abort", kill);
+      fs.rmSync(sysFile, { force: true });
+      if (signal?.aborted) return reject(new Error("stopped by the app"));
       let parsed = null;
       try { parsed = JSON.parse(out); } catch { /* not JSON */ }
       if (!parsed) return reject(new Error(`claude -p exited ${code}: ${(err || out).slice(0, 500)}`));
-      if (parsed.is_error) return reject(new Error(`claude -p: ${String(parsed.result ?? parsed.subtype ?? "error").slice(0, 500)}`));
       resolve(parsed);
     });
     child.stdin.end(prompt);
@@ -166,7 +181,8 @@ async function handle(body) {
   try {
     for (let attempt = 1; attempt <= 3 && !answer; attempt++) {
       const prompt = buildPrompt(body, history, schema, tools, toolsAllowed, note);
-      const res = await slot(() => claude(prompt, body.model, fs.existsSync(dir) ? dir : work));
+      const res = await slot(() => claude(prompt, body.model, dir, `${body.instructions ?? ""}\n\nYou are the model behind an application. Answer only in the JSON format the message asks for.`));
+      if (res.is_error) throw new Error(`claude -p: ${String(res.result ?? res.subtype ?? "error").slice(0, 500)}`);
       const u = res.usage ?? {};
       usage.input_tokens += (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
       usage.output_tokens += u.output_tokens ?? 0;
@@ -212,8 +228,60 @@ async function handle(body) {
   };
 }
 
+
+/**
+ * One agent run as one Claude Code session. The app serves the run's tools over MCP at mcp_url and names any source
+ * files in the prompt (they lie in the shared folder). Claude works until it answers without a tool call, runs out of
+ * turns, or the app hangs up because the run has what it needs.
+ */
+async function runAgent(body, signal) {
+  const id = crypto.randomUUID().slice(0, 8);
+  const dir = path.join(work, `agent-${id}`);
+  const mcp = JSON.stringify({ mcpServers: { soony: { type: "http", url: body.mcp_url } } });
+  const args = [
+    "--mcp-config", mcp, "--strict-mcp-config",
+    // Only the run's own tools, and Read when the prompt names files.
+    "--tools", body.read_files ? "Read" : "",
+    "--allowedTools", body.read_files ? "mcp__soony Read" : "mcp__soony",
+    "--max-turns", String(body.max_turns ?? 24),
+    "--no-session-persistence",
+  ];
+  const started = Date.now();
+  try {
+    const res = await agentSlot(() => claude(body.prompt ?? "", body.model, dir, body.system ?? "", args, signal));
+    const u = res.usage ?? {};
+    log(`agent ${id} ${res.subtype ?? ""} after ${res.num_turns ?? "?"} turns in ${Math.round((Date.now() - started) / 1000)} s`);
+    return {
+      text: res.result ?? "", is_error: Boolean(res.is_error), subtype: res.subtype ?? null, num_turns: res.num_turns ?? null,
+      usage: { input_tokens: (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0), output_tokens: u.output_tokens ?? 0 },
+    };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 http.createServer((req, res) => {
   if (req.method === "GET" && req.url === "/healthz") { res.writeHead(200); res.end("ok"); return; }
+  if (req.method === "POST" && req.url.replace(/\/+$/, "").endsWith("/agent")) {
+    const chunks = [];
+    const stop = new AbortController();
+    // The app hangs up when the run has what it needs. Then the session is ended.
+    res.on("close", () => { if (!res.writableEnded) stop.abort(); });
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", async () => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      const keep = setInterval(() => res.write(" "), 20_000);
+      try {
+        res.end(JSON.stringify(await runAgent(JSON.parse(Buffer.concat(chunks).toString("utf8")), stop.signal)));
+      } catch (e) {
+        log(`agent error: ${e.message}`);
+        if (!res.writableEnded) res.end(JSON.stringify({ error: String(e.message) }));
+      } finally {
+        clearInterval(keep);
+      }
+    });
+    return;
+  }
   if (req.method !== "POST" || !req.url.replace(/\/+$/, "").endsWith("/responses")) {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end('{"error":{"message":"not found"}}');

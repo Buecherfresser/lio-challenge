@@ -30,4 +30,6 @@ services:
     volumes:
       # The Claude login and settings (owned by uid 1000)
       - ./claude-home:/home/node
+      # Source files the app hands to an agent run, read-only
+      - ./data/claude-files:/files:ro
     mem_limit: 2g

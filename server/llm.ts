@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { config } from "./config.ts";
 import { totalSpendUsd } from "./events.ts";
 import type { ToolCallTrace } from "../shared/api.ts";
+import { runAgentClaude } from "./llm-claude.ts";
 
 // One place for every model call: Structured Outputs for reading, tool calling for the agents,
 // image and PDF input for scans. Returns token counts and cost so every call can be logged.
@@ -71,11 +72,19 @@ export function withStyle(system: string): string {
 export type Part =
   | { type: "text"; text: string }
   | { type: "image"; mime: string; bytes: Uint8Array }
-  | { type: "pdf"; filename: string; bytes: Uint8Array };
+  | { type: "pdf"; filename: string; bytes: Uint8Array }
+  // A source file. The OpenAI API gets its content in the message, Claude Code gets its name and opens it itself.
+  | { type: "file"; filename: string; mime: string; bytes: Uint8Array };
 
 function toContent(parts: Part[]) {
   return parts.map((p) => {
     if (p.type === "text") return { type: "input_text" as const, text: p.text };
+    if (p.type === "file") {
+      const b64 = Buffer.from(p.bytes).toString("base64");
+      if (p.mime.startsWith("image/")) return { type: "input_image" as const, image_url: `data:${p.mime};base64,${b64}`, detail: "high" as const };
+      if (p.mime === "application/pdf") return { type: "input_file" as const, filename: p.filename, file_data: `data:application/pdf;base64,${b64}` };
+      return { type: "input_text" as const, text: Buffer.from(p.bytes).toString("utf8") };
+    }
     const b64 = Buffer.from(p.bytes).toString("base64");
     if (p.type === "image") return { type: "input_image" as const, image_url: `data:${p.mime};base64,${b64}`, detail: "high" as const };
     return { type: "input_file" as const, filename: p.filename, file_data: `data:application/pdf;base64,${b64}` };
@@ -130,6 +139,8 @@ export interface AgentArgs {
  */
 export async function runAgent(a: AgentArgs): Promise<{ text: string; trace: ToolCallTrace[]; usage: Usage; steps: number }> {
   if (!llmAvailable()) throw new Error("OPENAI_API_KEY is not set.");
+  // On Claude Code the whole run is one session that calls the tools itself over MCP (llm-claude.ts).
+  if (claudeCode()) return runAgentClaude(a, loggedModel(a.model));
   const tools = a.tools.map((t) => ({ type: "function" as const, name: t.name, description: t.description, parameters: t.parameters, strict: true }));
   const byName = new Map(a.tools.map((t) => [t.name, t]));
   const trace: ToolCallTrace[] = [];
