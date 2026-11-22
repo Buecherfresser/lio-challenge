@@ -369,7 +369,19 @@ function close(id: number, outcome: "done" | "failed", reason: string, runId: st
 
 // ---- one run for one risk ----
 
-interface Seen { risk: string; decisions: Record<string, string>; questions: string; limit: number }
+interface Seen { risk: string; decisions: Record<string, string>; questions: string; limit: number; unpriced?: string }
+
+/**
+ * Pending decisions of a risk whose cost needs a quote and for which no price question went out since the card was
+ * made. Asking costs nothing, so an open price alone is reason enough to wake the agent.
+ */
+function unpricedDecisions(riskId: number): number[] {
+  return all<{ id: number }>(
+    `SELECT d.id FROM decisions d WHERE d.risk_id = ? AND d.status = 'pending' AND d.cost_eur IS NULL
+       AND NOT EXISTS (SELECT 1 FROM questions q WHERE q.risk_id = d.risk_id AND q.topic = 'price'
+                       AND q.status IN ('queued', 'sent', 'answered') AND q.created_at >= d.created_at)
+     ORDER BY d.id`, riskId).map((d) => d.id);
+}
 
 function caseState(risk: RiskDb): Seen {
   const at = now().getTime();
@@ -377,7 +389,7 @@ function caseState(risk: RiskDb): Seen {
     const late = d.stage === "ordered" && d.check_at && new Date(d.check_at).getTime() < at ? ":confirmation overdue" : "";
     return [String(d.id), `${d.status}:${d.stage}${late}`];
   }));
-  return { risk: `${risk.status}|${risk.copies_at_risk}|${risk.fact_ids}|${risk.scenario}`, decisions, questions: questionSignature(risk.id), limit: autonomyLimit() };
+  return { risk: `${risk.status}|${risk.copies_at_risk}|${risk.fact_ids}|${risk.scenario}`, decisions, questions: questionSignature(risk.id), limit: autonomyLimit(), unpriced: unpricedDecisions(risk.id).join(",") };
 }
 
 /** In words, what changed about a risk since the agent last looked. Empty = nothing to do. */
@@ -395,6 +407,13 @@ function whatChanged(risk: RiskDb, seen: Seen | null, state: Seen): string[] {
   }
   if (seen.questions !== state.questions) out.push("Something changed about your questions: an answer came in, or an answer is overdue. See the list.");
   if (seen.limit !== state.limit) out.push("The limit up to which you may act on your own was changed.");
+  // Each card without a price wakes the agent once. If it still asks nobody, the card does not wake it again.
+  const known = new Set((seen.unpriced ?? "").split(",").filter(Boolean));
+  for (const id of (state.unpriced ?? "").split(",").filter(Boolean)) {
+    if (known.has(id)) continue;
+    const d = decisionById(Number(id));
+    if (d) out.push(`Decision ${id} ("${d.title}") has no price, so its card says the cost needs a quote, and nobody has been asked for one. Ask for a quote now with the topic "price": the supplier, or the colleague who books it. A question for a price needs no approval.`);
+  }
   return out;
 }
 

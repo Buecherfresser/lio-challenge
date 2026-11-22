@@ -55,7 +55,7 @@ The other fields:
 - `expires_at`: when the offer behind the option runs out, as an ISO time, if a source states it. Otherwise null.
 - `cost_items`: what has to be paid, one entry per thing. Each names where its quantity and its price come from:
   - `quantity_from`: `scenario_change` with `scenario_change_index` (position in your scenario's changes, starting at 0) or `fact` with `quantity_fact_id`.
-  - `price_from`: `fact` with `price_fact_id` (a fact that holds a unit price), `supplier_price` with `price_supplier_id` and `price_part_id` (the supplier's price list), or `none` if no price is on file. With `none` the card says the cost needs a quote.
+  - `price_from`: `fact` with `price_fact_id` (a fact that holds a unit price), `supplier_price` with `price_supplier_id` and `price_part_id` (the supplier's price list), or `none` if no price is on file. With `none` the card says the cost needs a quote, so in the same pass ask whoever can price it for a quote, with the topic `price`: the supplier, or the colleague who books it (the Logistics Planner for a truck or freight). A question for a price needs no approval. Skip it only if that question is already out.
   - `note`: anything that changes the price and is only in text, such as a surcharge or freight that is not priced.
   - Leave the list empty if the option costs nothing to buy or ship (a signature, a phone call).
 - `approval_kind`: `po_value` for an order, `air_freight`, `supplier_release`, `quality_concession`, `dock_slot`, `exception`, or `other`.
