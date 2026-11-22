@@ -1,4 +1,4 @@
-import { CircleCheck, History, LayoutDashboard, ListTodo, Mail, Package } from "lucide-react"
+import { Bot, CircleCheck, History, LayoutDashboard, ListTodo, Mail, Package } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
 /** The management view: one number and the map. No sidebar, no agent internals. */
@@ -11,6 +11,7 @@ export const BUYER_HOME = "/buyer"
  * The pages of the buyer view, in sidebar order.
  * Overview shows only what is urgent. Decisions is what waits for a signature (and mails to release).
  * Tasks is everything the agents asked of a person at Soony, with its state. Each person gets a mail per new task.
+ * Agents is what the agents took care of, one line per case: what changed, what it means, what was done, where it stands.
  * Supply is the state of every part, as a table or a map.
  * Mail is the archive of every conversation. History is what the agents did, step by step.
  */
@@ -18,6 +19,7 @@ export const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; match?: s
   { to: BUYER_HOME, label: "Overview", icon: LayoutDashboard },
   { to: "/decisions", label: "Decisions", icon: CircleCheck, match: ["/approvals", "/todo"] },
   { to: "/tasks", label: "Tasks", icon: ListTodo, match: ["/colleagues"] },
+  { to: "/agents", label: "Agents", icon: Bot },
   { to: "/parts", label: "Supply", icon: Package },
   { to: "/inbox", label: "Mail", icon: Mail },
   { to: "/log", label: "History", icon: History },

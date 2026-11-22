@@ -15,6 +15,7 @@ import { approvalFor, APPROVAL_KINDS } from "../compute/approval.ts";
 import type { ApprovalKind } from "../compute/approval.ts";
 import { agentWork, decide } from "../agents/action.ts";
 import { questionRows, toAgentQuestion } from "../agents/questions.ts";
+import { listCases, writeCaseLines } from "../agents/cases.ts";
 import { usesDashboard } from "../agents/data/rows.ts";
 import { currentSettings, saveSettings, valueOf } from "../compute/value.ts";
 
@@ -81,6 +82,7 @@ async function decideRoute(id: string, verdict: "approved" | "rejected", body: {
   if (!Number.isInteger(n)) return null;
   const card = await decide(n, verdict, body.by?.trim() || "dashboard", body.reason?.trim() || undefined);
   if (card) loadSnapshot(true); // the next poll shows the new state
+  if (card) void writeCaseLines().catch(() => undefined); // the line of the case on the Agents page moves on
   return card;
 }
 const body = async (c: { req: { json: () => Promise<unknown> } }) => ((await c.req.json().catch(() => ({}))) ?? {}) as { by?: string; reason?: string };
@@ -93,6 +95,9 @@ riskApi.post("/decisions/:id/reject", async (c) => {
   const card = await decideRoute(c.req.param("id"), "rejected", await body(c));
   return card ? c.json(card) : c.json({ error: "decision not found" }, 404);
 });
+
+// The Agents page: every case the agents worked on, as one line each.
+riskApi.get("/cases", (c) => c.json(listCases()));
 
 riskApi.get("/questions", (c) => {
   const id = Number(c.req.query("risk_id"));

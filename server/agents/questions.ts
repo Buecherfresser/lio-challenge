@@ -53,7 +53,7 @@ const supplierName = (id: string | null) => (id ? (get<{ name: string }>("SELECT
 function answerOfIssue(issueId: number): string | null {
   return get<{ body_en: string }>("SELECT m.body_en FROM messages m, json_each(m.issue_ids) j WHERE m.direction = 'in' AND j.value = ? ORDER BY m.id DESC LIMIT 1", issueId)?.body_en.slice(0, 1500) ?? null;
 }
-function answerText(q: QuestionDb): string | null {
+export function answerText(q: QuestionDb): string | null {
   if (q.issue_id) return answerOfIssue(q.issue_id);
   if (q.task_id && q.status === "answered") {
     const answer = get<{ answer: string | null }>("SELECT answer FROM tasks WHERE id = ?", q.task_id)?.answer;
@@ -194,7 +194,7 @@ export function refreshQuestions(): { answered: number; given_up: number } {
   return { answered, given_up: givenUp };
 }
 
-const nameOf = (q: QuestionDb): string => q.person ?? q.role ?? supplierName(q.supplier_id);
+export const nameOf = (q: QuestionDb): string => q.person ?? q.role ?? supplierName(q.supplier_id);
 
 export const toAgentQuestion = (q: QuestionDb): AgentQuestion => ({
   id: q.id, risk_id: q.risk_id, to: nameOf(q), supplier_id: q.supplier_id, role: q.role, text: q.text, status: q.status, answer_by: q.answer_by, sent_at: q.sent_at, answered_at: q.answered_at,

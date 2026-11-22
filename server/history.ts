@@ -60,7 +60,7 @@ const WORDS: Record<string, HistoryWord> = {
   "decision.failed": "Failed",
 };
 /** Steps in between: recorded so that playing an event shows them, but without a word. */
-const BETWEEN = new Set(["base.loaded", "rules.checked", "clarification.done", "risk_agent.finished", "action_agent.finished", "decision.signed", "decision.withdrawn", "task.created", "risk.closed", "issue.answered"]);
+const BETWEEN = new Set(["base.loaded", "rules.checked", "clarification.done", "risk_agent.finished", "action_agent.finished", "decision.signed", "decision.withdrawn", "task.created", "risk.closed", "issue.answered", "cases.written"]);
 /** Where an event stands, from the last word on its bar. */
 const STATE: Record<HistoryWord, string> = {
   "New data": "nothing to do", "Risk": "risk found", "Supplier asked": "waiting for a supplier", "Supplier replied": "supplier replied", "Decision ready": "waiting for a decision",

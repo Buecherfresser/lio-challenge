@@ -13,6 +13,7 @@ import { proposeColumnMapping } from "./agents/data/extract.ts";
 import { pollInbox } from "./mail/inbox.ts";
 import { runRiskAgent } from "./agents/risk.ts";
 import { recomputeDecisions, runActionAgent } from "./agents/action.ts";
+import { writeCaseLines } from "./agents/cases.ts";
 import type { Overview, Status } from "../shared/api.ts";
 
 // One cycle: sync -> base data -> data agent -> risk agent -> action agent.
@@ -87,6 +88,8 @@ export async function runCycle(opts: { advanceReplay?: boolean } = {}): Promise<
       await runData();
       await runRisk();
       await runAction();
+      // The lines on the Agents page follow what just happened. A failure here must not stop the cycle.
+      await writeCaseLines().catch((e) => console.error("case lines:", (e as Error).message));
     } while ((again || (pendingDocs() > 0 && llmAvailable())) && !stopping);
   } finally {
     cycling = false;

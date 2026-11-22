@@ -2,6 +2,7 @@ import { Link, Navigate, Route, Routes, useSearchParams } from "react-router"
 import { AppLayout, ManagementLayout } from "@/components/app-layout"
 import { EmptyState } from "@/components/states"
 import { BUYER_HOME } from "@/lib/nav"
+import { AgentsPage } from "@/pages/agents"
 import { InboxPage } from "@/pages/inbox"
 import { LogPage } from "@/pages/log"
 import { ManagementPage } from "@/pages/management"
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="todo" element={<KeepQuery to="/decisions" />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route path="colleagues" element={<KeepQuery to="/tasks" />} />
+        <Route path="agents" element={<AgentsPage />} />
         <Route path="approvals" element={<ApprovalsRedirect />} />
         <Route path="parts" element={<PartsPage />} />
         <Route path="parts/:part_id" element={<PartsPage />} />
