@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ACTOR_LABEL, OBJECT_TYPE_LABEL, dateOnly, num, timeOnly, timeWithSeconds, usd } from "@/lib/format"
+import { headlineOf, headlineShortens } from "@/lib/headline"
 import { useEvents, useFacts, useHistory, useStatus } from "@/lib/queries"
 import { timeTravel, usePast } from "@/lib/time-travel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -55,6 +56,7 @@ function EventDetails({ event }: { event: EventRow }) {
   const nothing = event.input == null && event.output == null && event.fact_ids.length === 0
   return (
     <div className="space-y-3 border-t bg-muted/30 px-4 py-3 pl-10 text-sm">
+      {headlineShortens(event) && <p className="max-w-3xl leading-relaxed whitespace-pre-wrap">{event.summary}</p>}
       <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
         <div className="flex gap-1.5">
           <dt className="text-muted-foreground">Action</dt>
@@ -125,7 +127,7 @@ function EventItem({ event, repeat = 1, moment }: { event: EventRow; repeat?: nu
           </div>
         </div>
         <div className="col-start-2 min-w-0 text-sm lg:col-start-auto">
-          {event.summary}
+          {headlineOf(event)}
           {repeat > 1 && <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">×{repeat}</span>}
           {moment && (
             <Tooltip>
@@ -147,7 +149,7 @@ function EventItem({ event, repeat = 1, moment }: { event: EventRow; repeat?: nu
             </Tooltip>
           )}
           {/* The object link repeats the title when the sentence already names it, so it is left out then. */}
-          {event.object && !(event.object.label && event.summary.includes(event.object.label)) && (
+          {event.object && !(event.object.label && headlineOf(event).includes(event.object.label.slice(0, 40))) && (
             <>
               {" "}
               <ObjectLink object={event.object} className="text-xs whitespace-nowrap text-muted-foreground" />
