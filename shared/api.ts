@@ -201,7 +201,7 @@ export interface DecisionCard {
   report_facts?: Fact[];      // the facts the report lines cite
   mail_draft: Message | null;
   risk?: Risk;
-  created_by: "mock" | "agent";
+  created_by: "agent";
   created_at: string;
   decided_at: string | null;
   decided_by: string | null;
