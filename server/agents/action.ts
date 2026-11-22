@@ -17,6 +17,7 @@ import type { ApprovalKind } from "../compute/approval.ts";
 import { autonomyLimit, timingOf, valueOf, valuePerCopy } from "../compute/value.ts";
 import { factLine, overviewForAgent, partForAgent } from "../compute/context.ts";
 import { decisionById, decisionMailId, decisionRows, riskById, riskRows, toRisk } from "../compute/rows.ts";
+import type { DecisionDb } from "../compute/rows.ts";
 import type { RiskDb } from "../compute/rows.ts";
 import { logger, readTools } from "./tools.ts";
 import { TOPICS, askQuestion, contactCounts, flushQuestions, questionSignature, questionsForAgent, refreshQuestions, threadForAgent, waitingOn } from "./questions.ts";
@@ -385,11 +386,30 @@ function unpricedDecisions(riskId: number): number[] {
      ORDER BY d.id`, riskId).map((d) => d.id);
 }
 
+/**
+ * What came back after the mail of a decision went out: the mails the other side sent in the same thread since then,
+ * once the data agent has read them. A supplier's confirmation and a colleague's answer both arrive this way.
+ */
+function repliesTo(d: Pick<DecisionDb, "mail_message_id">): { id: number; from: string; at: string; text: string }[] {
+  if (d.mail_message_id === null) return [];
+  const mail = get<{ id: number; thread_id: string; supplier_id: string | null; person: string | null }>("SELECT id, thread_id, supplier_id, person FROM messages WHERE id = ?", d.mail_message_id);
+  if (!mail) return [];
+  const from = mail.supplier_id ? (loadSnapshot().suppliers.get(mail.supplier_id)?.name ?? mail.supplier_id) : (mail.person ?? "the colleague");
+  return all<{ id: number; at: string; body_en: string }>(
+    "SELECT id, COALESCE(sent_at, created_at) AS at, body_en FROM messages WHERE thread_id = ? AND direction = 'in' AND processed = 1 AND id > ? ORDER BY id", mail.thread_id, mail.id)
+    .map((m) => ({ id: m.id, from, at: m.at, text: m.body_en.slice(0, 1500) }));
+}
+/** How many replies a decision had when the agent last looked, from the state it stored then. */
+const repliesSeen = (state: string | undefined) => Number(state?.match(/:replies=(\d+)/)?.[1] ?? 0);
+
 function caseState(risk: RiskDb): Seen {
   const at = now().getTime();
   const decisions = Object.fromEntries(decisionRows("risk_id = ?", risk.id).map((d) => {
+    const flying = d.status === "approved" && (d.stage === "approved" || d.stage === "ordered");
+    // A reply to the mail of a decision in flight is news for the agent, as much as a deadline that passed.
+    const replies = flying ? `:replies=${repliesTo(d).length}` : "";
     const late = d.stage === "ordered" && d.check_at && new Date(d.check_at).getTime() < at ? ":confirmation overdue" : "";
-    return [String(d.id), `${d.status}:${d.stage}${late}`];
+    return [String(d.id), `${d.status}:${d.stage}${replies}${late}`];
   }));
   return { risk: `${risk.status}|${risk.copies_at_risk}|${risk.fact_ids}|${risk.scenario}`, decisions, questions: questionSignature(risk.id), limit: autonomyLimit(), unpriced: unpricedDecisions(risk.id).join(",") };
 }
@@ -403,7 +423,11 @@ function whatChanged(risk: RiskDb, seen: Seen | null, state: Seen): string[] {
     if (seen.decisions[id] === s) continue;
     const d = decisionById(Number(id));
     if (!d) continue;
-    if (s.endsWith("confirmation overdue")) out.push(`Decision ${id} ("${d.title}") was carried out, and the time for the other side to confirm has passed.`);
+    if (repliesSeen(s) > repliesSeen(seen.decisions[id])) {
+      const reply = repliesTo({ mail_message_id: decisionMailId(Number(id)) }).at(-1);
+      out.push(`${reply?.from ?? "The other side"} replied to the mail of decision ${id} ("${d.title}"). The reply is in the case below. Read it now: if it confirms, close the decision as done. If it declines, close it as failed and look for another way. If it leaves something open, ask once.`);
+    }
+    else if (s.endsWith("confirmation overdue")) out.push(`Decision ${id} ("${d.title}") was carried out, and the time for the other side to confirm has passed.`);
     else if (d.status === "approved" && !seen.decisions[id]?.startsWith("approved")) out.push(`Decision ${id} ("${d.title}") was approved by ${d.decided_by ?? "someone"} and its mail is out.`);
     else if (d.status === "rejected" && d.stage !== "withdrawn") out.push(`Decision ${id} ("${d.title}") was rejected by ${d.decided_by ?? "someone"}${d.decision_reason ? `, with this reason: ${d.decision_reason}` : ", without a reason"}.`);
   }
@@ -438,7 +462,8 @@ function contextFor(risk: Risk, changes: string[], snap: Snapshot) {
       value_at_risk_eur: valueOf(risk.copies_by_product), part_id: risk.part_id, supplier_id: risk.supplier_id, facts: factsById(risk.fact_ids).map(factLine) },
     the_case_so_far: {
       decisions: decisionRows("risk_id = ?", risk.id).map((d) => ({ decision_id: d.id, status: d.status, stage: d.stage, title: d.title, option: d.option, copies_saved: d.copies_saved, value_eur: d.value_eur, cost_eur: d.cost_eur, decide_by: d.decide_by,
-        decided_by: d.decided_by, reason: d.decision_reason, carried_out_by_you: Boolean(d.auto) })),
+        decided_by: d.decided_by, reason: d.decision_reason, carried_out_by_you: Boolean(d.auto),
+        replies_since_its_mail_went_out: repliesTo(d).slice(-3).map((m) => ({ from: m.from, at: m.at, text: m.text })) })),
       questions: questionsForAgent(risk.id),
     },
     editions: overview.editions,
