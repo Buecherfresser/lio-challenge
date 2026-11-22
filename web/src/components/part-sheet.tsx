@@ -7,7 +7,7 @@ import { ObjectLink } from "@/components/object-link"
 import { RiskDetails } from "@/components/risk-details"
 import { EmptyState, ErrorState } from "@/components/states"
 import { StatusBadge, StatusDot } from "@/components/status"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ACTOR_LABEL, dateTime, num } from "@/lib/format"
 import { usePart } from "@/lib/queries"
@@ -137,50 +137,70 @@ function IssueItem({ issue, part }: { issue: Issue; part: PartDetail }) {
   )
 }
 
+/**
+ * The one question for a part: is there enough of it by the deadline? A bar against the need, split into what is
+ * safe, what carries an early warning (may still come, not confirmed) and the gap, with one sentence that says it.
+ */
+function Coverage({ part }: { part: PartDetail }) {
+  const need = Math.max(part.need, 0)
+  const safe = Math.min(part.available_safe, need)
+  const warning = Math.min(part.available_uncertain, need - safe)
+  const gap = Math.max(need - safe - warning, 0)
+  const share = (n: number) => `${need > 0 ? (n / need) * 100 : 0}%`
+  const verdict =
+    need === 0
+      ? "Nothing more is needed before the deadline."
+      : gap > 0
+        ? `${num(gap)} of ${num(need)} cannot arrive in time as things stand.`
+        : warning > 0
+          ? `${num(safe)} of ${num(need)} are safe. The other ${num(warning)} depend on supply that is not confirmed yet.`
+          : `All ${num(need)} are safe.`
+  const rows = [
+    { level: "safe" as const, label: "Safe", value: safe, text: "In the building and usable" },
+    {
+      level: "uncertain" as const,
+      label: "Early warning",
+      value: warning,
+      text:
+        part.available_uncertain > warning
+          ? `May still come in time but is not confirmed (${num(part.available_uncertain)} on the way, ${num(warning)} needed)`
+          : "May still come in time but is not confirmed",
+    },
+    { level: "lost" as const, label: "Gap", value: gap, text: "Cannot arrive before the deadline" },
+  ]
+  return (
+    <div className="space-y-3 rounded-lg border px-4 py-3.5">
+      <div>
+        <div className="text-xs text-muted-foreground">Needed until the deadline: {num(need)}</div>
+        <p className="mt-0.5 text-base font-semibold">{verdict}</p>
+      </div>
+      {need > 0 && (
+        <div className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+          {safe > 0 && <div className="h-full bg-foreground" style={{ width: share(safe) }} />}
+          {warning > 0 && <div className="h-full bg-uncertain" style={{ width: share(warning) }} />}
+          {gap > 0 && <div className="h-full bg-lost" style={{ width: share(gap) }} />}
+        </div>
+      )}
+      <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-3">
+        {rows.map((row) => (
+          <div key={row.label} className="min-w-0">
+            <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <StatusDot level={row.level} className="size-1.5" />
+              {row.label}
+            </dt>
+            <dd className={cn("font-semibold tabular-nums", row.value === 0 && "text-muted-foreground")}>{num(row.value)}</dd>
+            <dd className="text-xs text-muted-foreground">{row.text}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
 function Body({ part }: { part: PartDetail }) {
   return (
-    <div className="space-y-6 px-4 pb-8">
-      <div className="rounded-lg border">
-        <div className="grid grid-cols-3 gap-y-3 px-1 py-3 sm:flex sm:items-center">
-          {PIPELINE.map((step, index) => (
-            <Fragment key={step.key}>
-              {index > 0 && <ChevronRight className="hidden size-3.5 shrink-0 text-muted-foreground/60 sm:block" />}
-              <div className="min-w-0 flex-1 px-2 text-center" title={step.hint}>
-                <div className="truncate text-[11px] text-muted-foreground">{step.label}</div>
-                <div
-                  className={cn("text-sm font-semibold tabular-nums", part[step.key] === 0 && "text-muted-foreground")}
-                >
-                  {num(part[step.key])}
-                </div>
-              </div>
-            </Fragment>
-          ))}
-        </div>
-        <dl className="grid grid-cols-2 gap-y-2 border-t px-3 py-2.5 text-sm sm:grid-cols-4">
-          <div>
-            <dt className="text-xs text-muted-foreground">Need</dt>
-            <dd className="font-medium tabular-nums">{num(part.need)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Safe by the deadline</dt>
-            <dd className="font-medium tabular-nums">{num(part.available_safe)}</dd>
-          </div>
-          <div>
-            <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {part.available_uncertain > 0 && <StatusDot level="uncertain" className="size-1.5" />}
-              May still come
-            </dt>
-            <dd className="font-medium tabular-nums">{num(part.available_uncertain)}</dd>
-          </div>
-          <div>
-            <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {part.gap > 0 && <StatusDot level="lost" className="size-1.5" />}
-              Gap
-            </dt>
-            <dd className="font-medium tabular-nums">{num(part.gap)}</dd>
-          </div>
-        </dl>
-      </div>
+    <div className="space-y-6 px-6 pb-8">
+      <Coverage part={part} />
 
       <Section title="Sources" count={part.sources.length}>
         {part.sources.length === 0 ? (
@@ -221,6 +241,24 @@ function Body({ part }: { part: PartDetail }) {
       </Section>
 
       <div className="border-b">
+        <Fold title="All open orders, also those due after the launch">
+          <p className="mb-2 text-xs text-muted-foreground">
+            Each step counts every open order of this part, so the numbers can be far above what the launch needs.
+          </p>
+          <div className="grid grid-cols-3 gap-y-3 rounded-lg border px-1 py-3 sm:flex sm:items-center">
+            {PIPELINE.map((step, index) => (
+              <Fragment key={step.key}>
+                {index > 0 && <ChevronRight className="hidden size-3.5 shrink-0 text-muted-foreground/60 sm:block" />}
+                <div className="min-w-0 flex-1 px-2 text-center" title={step.hint}>
+                  <div className="truncate text-[11px] text-muted-foreground">{step.label}</div>
+                  <div className={cn("text-sm font-semibold tabular-nums", part[step.key] === 0 && "text-muted-foreground")}>
+                    {num(part[step.key])}
+                  </div>
+                </div>
+              </Fragment>
+            ))}
+          </div>
+        </Fold>
         <Fold title="History" count={part.history.length}>
           {part.history.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nothing has happened to this part yet.</p>
@@ -252,45 +290,46 @@ function Body({ part }: { part: PartDetail }) {
 export function PartSheet({ partId, onClose }: { partId: string | undefined; onClose: () => void }) {
   const { data: part, isPending, isError } = usePart(partId)
   return (
-    <Sheet open={Boolean(partId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="gap-0 overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-[640px]">
-        <SheetHeader className="gap-1.5 pr-12">
+    <Dialog open={Boolean(partId)} onOpenChange={(open) => !open && onClose()}>
+      {/* Centred and as wide as a comfortable read, like the items of the to-do list. */}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-3xl lg:max-w-4xl">
+        <DialogHeader className="gap-1.5 px-6 pt-6 pb-4 pr-14">
           {part ? (
             <>
               <div className="flex items-center gap-2">
                 <StatusBadge level={part.status} />
                 {part.critical && <span className="rounded-full border px-2 text-xs leading-5">Critical</span>}
               </div>
-              <SheetTitle className="text-lg">{part.description}</SheetTitle>
-              <SheetDescription>
+              <DialogTitle className="text-lg">{part.description}</DialogTitle>
+              <DialogDescription>
                 <span className="font-mono text-xs">{part.part_id}</span> · {part.category}
                 {part.drawing_rev && ` · drawing rev ${part.drawing_rev}`}
                 {part.suppliers.length > 0 && ` · ${part.suppliers.map((supplier) => supplier.name).join(", ")}`}
-              </SheetDescription>
+              </DialogDescription>
             </>
           ) : (
             <>
-              <SheetTitle className="text-lg">{isError ? "Part not found" : <Skeleton className="h-6 w-56" />}</SheetTitle>
-              <SheetDescription>
+              <DialogTitle className="text-lg">{isError ? "Part not found" : <Skeleton className="h-6 w-56" />}</DialogTitle>
+              <DialogDescription>
                 <span className="font-mono text-xs">{partId}</span>
-              </SheetDescription>
+              </DialogDescription>
             </>
           )}
-        </SheetHeader>
+        </DialogHeader>
         {part ? (
           <Body part={part} />
         ) : isPending ? (
-          <div className="space-y-4 px-4">
+          <div className="space-y-4 px-6 pb-6">
             <Skeleton className="h-28 w-full" />
             <Skeleton className="h-40 w-full" />
             <Skeleton className="h-40 w-full" />
           </div>
         ) : (
-          <div className="px-4">
+          <div className="px-6 pb-6">
             <ErrorState what="this part" />
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
