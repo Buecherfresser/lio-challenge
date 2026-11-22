@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils"
 // The map is the same data drawn on the world, one switch away.
 
 const STATUS_ORDER: Record<PartStatus, number> = { lost: 0, uncertain: 1, ok: 2 }
-const STATUS_LABEL: Record<PartStatus, string> = { lost: "Lost", uncertain: "Uncertain", ok: "Covered" }
+const STATUS_LABEL: Record<PartStatus, string> = { lost: "Lost", uncertain: "Early warning", ok: "Covered" }
 const ALL = "all"
 
 function Quantity({ value, className }: { value: number; className?: string }) {

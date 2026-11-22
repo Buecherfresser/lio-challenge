@@ -27,7 +27,7 @@ export function MapLegend() {
       <Item mark={<Swatch stroke="var(--map-air)" />}>Air</Item>
       <Item mark={<Swatch stroke="var(--map-truck)" />}>Truck</Item>
       <Item mark={<Swatch stroke="var(--map-leg)" width={1} />}>To port</Item>
-      <Item mark={<span className="size-2 rounded-full bg-(--map-uncertain)" />}>Uncertain</Item>
+      <Item mark={<span className="size-2 rounded-full bg-(--map-uncertain)" />}>Early warning</Item>
       <Item mark={<span className="size-2 rounded-full bg-(--map-lost)" />}>Lost</Item>
       <Item mark={<X className="size-3 text-(--map-lost)" strokeWidth={3} />}>Disrupted</Item>
       <Item mark={<Swatch stroke="var(--map-decision)" dash="5 3" width={1.75} />}>Proposed</Item>

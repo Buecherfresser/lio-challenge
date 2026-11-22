@@ -14,7 +14,7 @@ export interface SupplyPartsListProps {
 }
 
 const RANK = { lost: 0, uncertain: 1, ok: 2 } as const
-const WORD = { lost: "Lost", uncertain: "Uncertain", ok: "On track" } as const
+const WORD = { lost: "Lost", uncertain: "Early warning", ok: "On track" } as const
 
 /** Beside the map: the critical parts as focus buttons, the fine ones folded into one line. */
 export function SupplyPartsList({ parts, map, focusPartId, onFocus }: SupplyPartsListProps) {

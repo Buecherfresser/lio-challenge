@@ -24,7 +24,7 @@ const URGENT_WITHIN_MS = 24 * 3600000
 const SEGMENTS = [
   { key: "packed", label: "Packed", color: "bg-foreground" },
   { key: "safe", label: "Safe", color: "bg-neutral-400" },
-  { key: "uncertain", label: "Uncertain", color: "bg-uncertain" },
+  { key: "uncertain", label: "Early warning", color: "bg-uncertain" },
   { key: "lost", label: "Lost", color: "bg-lost" },
 ] as const
 
@@ -53,7 +53,7 @@ function EditionTile({ edition, parts }: { edition: EditionStatus; parts: Map<st
     edition.lost > 0
       ? `${num(edition.lost)} lost`
       : edition.uncertain > 0
-        ? `${num(edition.uncertain)} uncertain`
+        ? `${num(edition.uncertain)} early warning`
         : "on track"
   return (
     <Popover>
@@ -255,7 +255,7 @@ export function OverviewPage() {
             label="Supply"
             detail={
               lostParts + uncertainParts > 0
-                ? `${num(lostParts)} parts lost, ${num(uncertainParts)} uncertain`
+                ? `${num(lostParts)} parts lost, ${num(uncertainParts)} with an early warning`
                 : "Every part is covered"
             }
           />

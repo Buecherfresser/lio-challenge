@@ -6,7 +6,7 @@ export type Level = "ok" | "safe" | "uncertain" | "lost" | "info"
 const LEVEL_LABEL: Record<Level, string> = {
   ok: "OK",
   safe: "Safe",
-  uncertain: "Uncertain",
+  uncertain: "Early warning",
   lost: "Lost",
   info: "Info",
 }

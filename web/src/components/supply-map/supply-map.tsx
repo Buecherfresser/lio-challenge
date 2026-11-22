@@ -64,7 +64,7 @@ const STATUS_COLOR: Record<MapShipment["status_class"], string> = {
   safe: "var(--map-truck)",
 }
 
-const STATUS_WORD: Record<MapShipment["status_class"], string> = { lost: "lost", uncertain: "uncertain", safe: "safe" }
+const STATUS_WORD: Record<MapShipment["status_class"], string> = { lost: "lost", uncertain: "early warning", safe: "safe" }
 
 /** A map of the critical supply on its way to Hamburg. Text only in tooltips and the info cards. */
 export function SupplyMap({ map, focusPartId, variant, className }: SupplyMapProps) {

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 
 const SHARES = [
   { key: "sure", label: "Safe", color: "bg-foreground" },
-  { key: "uncertain", label: "Uncertain", color: "bg-uncertain" },
+  { key: "uncertain", label: "Early warning", color: "bg-uncertain" },
   { key: "lost", label: "Lost", color: "bg-lost" },
 ] as const
 
@@ -76,6 +76,12 @@ function Headline({ overview }: { overview: Overview }) {
           </div>
         ))}
       </dl>
+      {all.uncertain > 0 && (
+        <p className="max-w-2xl text-xs text-muted-foreground">
+          Early warning: these copies depend on something not confirmed yet, such as a shipment that is due in time or a
+          lot on quality hold. We flag them early so someone can check. They are not lost.
+        </p>
+      )}
 
       {overview.editions.length > 1 && (
         <ul className="grid max-w-2xl gap-2 pt-1 sm:grid-cols-2">
